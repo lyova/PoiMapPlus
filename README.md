@@ -83,11 +83,14 @@ file - no rebuild needed.
 
 ## Building
 
-See the [repository README](../../README.md). Short version:
+Needs the .NET SDK 8.0 or newer. Game assemblies are referenced straight from the install
+directory; adjust `GameDir` in `Directory.Build.props` if yours differs.
 
 ```powershell
-.uild.ps1 PoiMapPlus
+.uild.ps1
 ```
+
+The build deploys the mod into the game's `Mods` folder and packs an archive into `dist\`.
 
 ## License
 

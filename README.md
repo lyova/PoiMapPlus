@@ -87,7 +87,7 @@ Needs the .NET SDK 8.0 or newer. Game assemblies are referenced straight from th
 directory; adjust `GameDir` in `Directory.Build.props` if yours differs.
 
 ```powershell
-.uild.ps1
+.\build.ps1
 ```
 
 The build deploys the mod into the game's `Mods` folder and packs an archive into `dist\`.

@@ -1,0 +1,18 @@
+<configs>
+
+    <!-- Nav object class used for POI markers. Sprite and colour are overridden per marker from code. -->
+    <append xpath="/nav_object_classes">
+        <nav_object_class name="poimapplus_poi">
+            <property name="requirement_type" value="None" />
+            <map_settings>
+                <property name="sprite_name" value="ui_game_symbol_skull" />
+                <property name="min_distance" value="0" />
+                <property name="max_distance" value="-1" />
+                <property name="color" value="255,255,255,255" />
+                <property name="has_pulse" value="false" />
+                <property name="offset" value="0,0,0" />
+            </map_settings>
+        </nav_object_class>
+    </append>
+
+</configs>

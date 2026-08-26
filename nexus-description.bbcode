@@ -1,0 +1,61 @@
+[size=4][b]POI Map Plus[/b][/size]
+
+Open the map and see which POIs you have already stripped, and which still hold their loot room.
+
+[size=3][b]What it does[/b][/size]
+
+[list]
+[*][b]A marker on every POI you have been to.[/b] It appears the first time you get close enough for that part of the map to uncover, and stays from then on. POIs you have never approached are not shown, so nothing is spoiled ahead of time.
+[*][b]Difficulty on hover.[/b] Point at a marker to see the POI name and its tier. No permanent labels cluttering the map.
+[*][b]Cleared tracking.[/b] Orange skull means the best container in that POI is untouched. Green means someone already took it.
+[*][b]Quest resets are handled.[/b] Reset a POI through a quest and its marker goes back to orange.
+[/list]
+
+[size=3][b]How "cleared" is decided[/b][/size]
+
+The mod follows a ranked list of loot containers. In each POI it picks the best ranked container that is actually there and watches that one - lesser containers only matter when nothing better exists. Default order, richest first:
+
+[list=1]
+[*]Hardened Chest T5
+[*]Hardened Chest T4
+[*]Leather Trunk
+[*]Reinforced Chest, Wood Crate
+[*]Weapons Bag
+[*]Hidden Stash
+[*]Ammo piles
+[/list]
+
+Weapon bags and ammo piles disappear from the world once emptied. The mod notes them at the moment you open them, so they still count.
+
+Every bit of that is editable in [b]PoiMapPlus.xml[/b] - which containers count, in what order, the minimum POI tier, whether undiscovered POIs are shown, and the marker budget.
+
+[size=3][b]Requirements[/b][/size]
+
+[list]
+[*]7 Days to Die [b]V 3.2.0[/b]
+[*]The game must run [b]without EasyAntiCheat[/b], since the mod ships a DLL. Launch 7DaysToDie.exe directly, or choose the non-EAC option in the Steam launcher.
+[*]Client side only. It does not need to be installed on a server, other players do not need it, and your cleared state lives in your own save.
+[/list]
+
+[size=3][b]Installation[/b][/size]
+
+Extract into your [b]Mods[/b] folder so that you get [b]Mods\PoiMapPlus\ModInfo.xml[/b]. Vortex and the Mod Launcher handle it as a normal modlet.
+
+[size=3][b]Console commands[/b][/size]
+
+[code]poimap reload    re-read the config and refresh markers
+poimap rescan    reload, forget learned loot state, rescan from scratch
+poimap status    show tracked lists and POI counts
+poimap navdump   list nav objects by class and tracking type[/code]
+
+[size=3][b]Existing saves[/b][/size]
+
+Works on a save you already started. Explored areas get their markers immediately. Cleared marks fill in as you revisit POIs - the game remembers which containers were opened, the mod just needs the chunks loaded to read that.
+
+[size=3][b]Localization[/b][/size]
+
+English, German, Spanish, French, Italian, Japanese, Korean, Polish, Brazilian Portuguese, Turkish, Simplified and Traditional Chinese, plus Ukrainian. Fixing or adding a translation is one cell in Config\Localization.csv, no rebuild needed.
+
+[size=3][b]Permissions[/b][/size]
+
+MIT licensed. Fork it, modify it, bundle it into mod packs - credit is appreciated but not required.

@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <AssemblyName>PoiMapPlus</AssemblyName>
+    <RootNamespace>PoiMapPlus</RootNamespace>
+    <Version>1.0.0</Version>
+  </PropertyGroup>
+
+</Project>

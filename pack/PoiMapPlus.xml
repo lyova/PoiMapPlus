@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<poimapplus>
+
+    <!-- How many of the richest containers in a POI must be opened before it counts as cleared.
+         With ranked tracking below, 1 means "watch the single best container present". -->
+    <property name="TopContainerCount" value="1" />
+
+    <!-- Containers scoring below this never enter the ranking: trash bins, mailboxes, nightstands -->
+    <property name="MinContainerScore" value="25" />
+
+    <!-- What a container's loot value is made of -->
+    <property name="SlotWeight" value="1" />              <!-- per storage slot -->
+    <property name="LockedBonus" value="30" />            <!-- locked: safe, gun safe -->
+    <property name="JammedBonus" value="15" />            <!-- jammed container -->
+    <property name="QualityTemplateBonus" value="25" />   <!-- better than default item quality -->
+    <property name="LootStageBonusWeight" value="3" />
+    <property name="LootStageModWeight" value="100" />
+
+    <!-- Lowest difficulty tier that gets a marker. 1 skips tier 0 filler (sheds, ruined booths,
+         small huts) which almost never holds a tracked container. Set to 0 to show everything. -->
+    <property name="MinTier" value="1" />
+
+    <!-- true: only POIs the player has already uncovered on the map. false: every POI in the world -->
+    <property name="OnlyDiscovered" value="true" />
+
+    <!-- Minimum delay between two scans of the same POI -->
+    <property name="ScanIntervalSeconds" value="3" />
+
+    <!-- Safety net against thousands of markers on a large map -->
+    <property name="MaxMarkers" value="600" />
+
+    <!-- Only these loot lists count towards clearing a POI; everything else is ignored
+         completely and MinContainerScore no longer applies.
+         rank=1 is the richest container. The mod looks at the best ranked container actually
+         present in the POI and follows that one - lower ranks only matter when nothing
+         better exists there.
+         Names are LootLists from Data/Config/loot.xml, not block names. -->
+    <tracked_loot_lists>
+        <loot_list name="hardenedChestT5"   rank="1" />   <!-- Hardened Chest T5, camo army case -->
+        <loot_list name="hardenedChestT4"   rank="2" />   <!-- Hardened Chest, green plastic case -->
+        <loot_list name="reinforcedChestT2" rank="3" />   <!-- Leather Trunk -->
+
+        <!-- Both of these share rank 4 as requested. Note that reinforcedChestT3
+             (cntLootChestHero, the DANGER/WAREHOUSE chest) is the game's tier 3 and
+             reinforcedChestT1 (cntLootChestHeroInsecureT1) is its tier 1. -->
+        <loot_list name="reinforcedChestT3" rank="4" />   <!-- Reinforced Chest -->
+        <loot_list name="reinforcedChestT1" rank="4" />   <!-- Wood Crate -->
+
+        <!-- Weapons Bag. destroy_on_close: vanishes once emptied, handled via the open event. -->
+        <loot_list name="weaponsBagLarge"   rank="5" />
+        <loot_list name="weaponsBagSmall"   rank="5" />
+
+        <loot_list name="hiddenStash"       rank="6" />   <!-- cntLootCrateHero, cardboard box -->
+
+        <!-- Ammo piles, also destroy_on_close. -->
+        <loot_list name="ammoPileLarge"     rank="7" />
+        <loot_list name="ammoPileMed"       rank="7" />
+        <loot_list name="ammoPileSmall"     rank="7" />
+    </tracked_loot_lists>
+
+</poimapplus>

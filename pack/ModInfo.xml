@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xml>
+    <Name value="PoiMapPlus" />
+    <DisplayName value="POI Map Plus" />
+    <Description value="Marks every discovered POI on the map, colours it by difficulty tier and flags the ones whose best loot is already taken." />
+    <Author value="lyovi" />
+    <Version value="1.0.0" />
+    <Website value="" />
+    <SkipWithAntiCheat value="true" />
+</xml>

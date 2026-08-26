@@ -39,8 +39,28 @@ the rank at the moment the container is opened, so those still count.
 - 7 Days to Die **V 3.2.0**
 - Launch **without EasyAntiCheat** - the mod ships a DLL, and EAC blocks those. Start the game
   from `7DaysToDie.exe`, or pick the non-EAC option in the Steam launcher.
-- Single player and multiplayer clients. The mod is purely client-side: it does not have to be
-  installed on the server, and no other player needs it. Cleared state is stored in your own save.
+- Single player, and multiplayer clients - see below.
+
+## Multiplayer
+
+The mod is purely client-side: only you install it, the server does not need it and neither do the
+other players. Everything it reads - the POI list, the fog of war, the state of loot containers -
+is already on the client, and the cleared state lives in your own save.
+
+That said, **it has only been tested in single player**. It should behave the same as a client on
+a dedicated server, but nobody has verified that yet. Feedback welcome. Cleared marks are yours
+alone: they do not sync with what teammates have looted.
+
+## Compatibility
+
+- Hooks vanilla methods with Harmony postfixes (`XUiC_MapArea`, `LootManager.LootContainerOpened`,
+  `EntityPlayer.onNewPrefabEntered`, `PrefabInstance.ResetBlocksAndRebuild`) and appends one nav
+  object class through XPath, so no vanilla config file is overwritten.
+- UI overhauls that only restyle the map window are fine. A mod replacing the map controller with
+  its own class would leave the markers unhooked.
+- Containers from other mods are supported: add their loot lists to `tracked_loot_lists`.
+- Large overhauls such as Darkness Falls or Undead Legacy rework loot entirely, so the default
+  ranking needs adjusting in `PoiMapPlus.xml`.
 
 ## Installation
 

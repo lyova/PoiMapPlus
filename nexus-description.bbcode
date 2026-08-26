@@ -34,8 +34,12 @@ Every bit of that is editable in [b]PoiMapPlus.xml[/b] - which containers count,
 [list]
 [*]7 Days to Die [b]V 3.2.0[/b]
 [*]The game must run [b]without EasyAntiCheat[/b], since the mod ships a DLL. Launch 7DaysToDie.exe directly, or choose the non-EAC option in the Steam launcher.
-[*]Client side only. It does not need to be installed on a server, other players do not need it, and your cleared state lives in your own save.
+[*]Client side only. It does not need to be installed on a server, other players do not need it, and your cleared state lives in your own save. [b]Multiplayer is untested[/b]: it should work as a client on a dedicated server, but so far it has only been played in single player.
 [/list]
+
+[size=3][b]Compatibility[/b][/size]
+
+Hooks vanilla methods with Harmony postfixes and appends a single nav object class through XPath, so no vanilla file is overwritten. UI overhauls that only restyle the map are fine; a mod replacing the map controller with its own class would leave the markers unhooked. Containers from other mods are supported - add their loot lists to [b]tracked_loot_lists[/b]. Big overhauls like Darkness Falls or Undead Legacy rework loot completely, so the default ranking needs adjusting for them.
 
 [size=3][b]Installation[/b][/size]
 

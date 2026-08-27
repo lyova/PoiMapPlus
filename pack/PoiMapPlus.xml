@@ -35,42 +35,28 @@
 
     <!-- Only these loot lists count towards clearing a POI; everything else is ignored
          completely and MinContainerScore no longer applies.
-         rank=1 is the richest container. The mod looks at the best ranked container actually
-         present in the POI and follows that one - lower ranks only matter when nothing
-         better exists there.
+         rank=1 is the richest. The mod looks at the best ranked container actually present in
+         the POI and follows that one - lower ranks only matter when nothing better exists there.
+         max_poi_tier limits an entry to POIs up to that tier, so a container can count as the
+         prize in a small POI without competing with real loot room chests in a big one.
+         If a POI holds nothing from this list at all, it is treated as cleared right away.
          Names are LootLists from Data/Config/loot.xml, not block names. -->
     <tracked_loot_lists>
         <loot_list name="hardenedChestT5"   rank="1" />   <!-- Hardened Chest T5, camo army case -->
         <loot_list name="hardenedChestT4"   rank="2" />   <!-- Hardened Chest, green plastic case -->
         <loot_list name="reinforcedChestT2" rank="3" />   <!-- Leather Trunk -->
-
-        <!-- Both of these share rank 4 as requested. Note that reinforcedChestT3
-             (cntLootChestHero, the DANGER/WAREHOUSE chest) is the game's tier 3 and
-             reinforcedChestT1 (cntLootChestHeroInsecureT1) is its tier 1. -->
         <loot_list name="reinforcedChestT3" rank="4" />   <!-- Reinforced Chest -->
         <loot_list name="reinforcedChestT1" rank="4" />   <!-- Wood Crate -->
 
-        <!-- Weapons Bag. destroy_on_close: vanishes once emptied, handled via the open event. -->
-        <loot_list name="weaponsBagLarge"   rank="5" />
-        <loot_list name="weaponsBagSmall"   rank="5" />
-
-        <loot_list name="hiddenStash"       rank="6" />   <!-- cntLootCrateHero, cardboard box -->
-
-        <!-- Ammo piles, also destroy_on_close. -->
-        <loot_list name="ammoPileLarge"     rank="7" />
-        <loot_list name="ammoPileMed"       rank="7" />
-        <loot_list name="ammoPileSmall"     rank="7" />
-
-        <!-- Branded boxes inside sealed shipping crates. The crate itself holds no loot: breaking
-             it turns the block into the box below, which is what actually gets looted. -->
-        <loot_list name="shotgunMessiahCrate" rank="7" />   <!-- Gun Store Box -->
-        <loot_list name="workingStiffsCrate"  rank="7" />   <!-- Working Stiff Box -->
-        <loot_list name="savageCountryCrate"  rank="7" />   <!-- Savage Country Box -->
-        <loot_list name="shamwayCrate"        rank="7" />   <!-- Shamway Box -->
-        <loot_list name="mopowerCrate"        rank="7" />   <!-- Mo Power Electronics Box -->
-        <loot_list name="passngasCrate"       rank="7" />   <!-- Car Parts Box -->
-        <loot_list name="popnpillsCrate"      rank="7" />   <!-- Lab Equipment Box -->
-        <loot_list name="crackabookCrate"     rank="7" />   <!-- Bookstore Box -->
+        <!-- Weapons Bag counts only in tier 1 POIs, where it often is the final loot.
+             destroy_on_close: it vanishes once emptied, handled through the open event. -->
+        <loot_list name="weaponsBagLarge"   rank="5" max_poi_tier="1" />
+        <loot_list name="weaponsBagSmall"   rank="5" max_poi_tier="1" />
     </tracked_loot_lists>
+
+    <!-- Deliberately not tracked: ammo piles, hidden stashes and the branded boxes inside sealed
+         shipping crates. They show up all over a POI rather than in its loot room, so they say
+         nothing about whether the place has been stripped. Add them back with a rank here if you
+         disagree. -->
 
 </poimapplus>

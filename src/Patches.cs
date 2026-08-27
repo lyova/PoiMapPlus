@@ -119,7 +119,8 @@ namespace PoiMapPlus
                 // Record the opening before scanning: containers with destroy_on_close are gone
                 // from the world by the time we look for them again.
                 var rank = 0;
-                var tracked = storageFeature != null && LootScore.TryGetRank(storageFeature, out rank);
+                var tracked = storageFeature != null &&
+                              LootScore.TryGetRank(storageFeature, PoiRegistry.Tier(pi), out rank);
 
                 if (Cfg.Verbose)
                     Log.Out($"[PoiMapPlus] opened '{lootList}' in '{PoiRegistry.DisplayName(pi)}': " +

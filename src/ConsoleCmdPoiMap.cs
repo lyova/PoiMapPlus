@@ -124,7 +124,9 @@ namespace PoiMapPlus
         {
             var ranks = new List<string>();
             foreach (var pair in Cfg.TrackedRanks)
-                ranks.Add($"{pair.Key}={pair.Value}");
+                ranks.Add(pair.Value.MaxPoiTier == Cfg.cAnyTier
+                    ? $"{pair.Key}=r{pair.Value.Rank}"
+                    : $"{pair.Key}=r{pair.Value.Rank}/maxT{pair.Value.MaxPoiTier}");
             ranks.Sort();
 
             var discovered = 0;

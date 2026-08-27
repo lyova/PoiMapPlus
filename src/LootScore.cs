@@ -14,9 +14,10 @@ namespace PoiMapPlus
 
         /// <summary>
         /// Rank of a tracked container: 1 is the richest, higher is worse.
-        /// Returns false when the container is not tracked at all.
+        /// Returns false when the container is not tracked, or does not count in a POI
+        /// of this tier - a weapons bag matters in a tier 1 POI, not in a tier 5 one.
         /// </summary>
-        public static bool TryGetRank(TEFeatureStorage _storage, out int _rank)
+        public static bool TryGetRank(TEFeatureStorage _storage, int _poiTier, out int _rank)
         {
             _rank = Cfg.cWorstRank;
 
@@ -27,7 +28,11 @@ namespace PoiMapPlus
             if (string.IsNullOrEmpty(lootList)) return false;
             if (Cfg.LootListIgnore.Contains(lootList)) return false;
 
-            return Cfg.TrackedRanks.TryGetValue(lootList, out _rank);
+            if (!Cfg.TrackedRanks.TryGetValue(lootList, out var entry)) return false;
+            if (_poiTier > entry.MaxPoiTier) return false;
+
+            _rank = entry.Rank;
+            return true;
         }
 
         public static float Evaluate(TileEntityComposite _te, TEFeatureStorage _storage)

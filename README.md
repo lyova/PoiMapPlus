@@ -23,11 +23,16 @@ one - lower ranks only matter when nothing better exists in that POI. Anything n
 ignored entirely, so opening a nightstand on the way in marks nothing.
 
 The list itself lives in `PoiMapPlus.xml` under `tracked_loot_lists`, where every entry carries a
-`rank` - 1 being the richest. Look there for the current defaults; reordering them or adding your
-own containers is a matter of editing that file.
+`rank` - 1 being the richest. An entry can also carry `max_poi_tier`, which limits it to POIs up
+to that tier: a weapons bag is the prize of a tier 1 house, but in a tier 5 dungeon it is noise,
+so by default it only counts in tier 1. Look in the file for the current defaults; reordering
+them or adding your own containers is a matter of editing it.
 
-Some containers, weapon bags and ammo piles among them, vanish from the world once emptied. The
-mod records the rank at the moment such a container is opened, so they still count.
+If a POI holds nothing from the list at all, it is marked cleared straight away - there is
+nothing there worth coming back for.
+
+Weapon bags vanish from the world once emptied. The mod records the rank at the moment such a
+container is opened, so they still count.
 
 ## Requirements
 

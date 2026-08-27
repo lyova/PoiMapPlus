@@ -45,6 +45,7 @@ namespace PoiMapPlus
             var cx1 = World.toChunkXZ(min.x + Math.Max(0, size.x - 1));
             var cz1 = World.toChunkXZ(min.z + Math.Max(0, size.z - 1));
 
+            var poiTier = PoiRegistry.Tier(_pi);
             var complete = true;
             var allTotal = 0;
             var allTouched = 0;
@@ -76,7 +77,7 @@ namespace PoiMapPlus
 
                     if (Cfg.HasWhitelist)
                     {
-                        if (!LootScore.TryGetRank(storage, out rank)) continue;
+                        if (!LootScore.TryGetRank(storage, poiTier, out rank)) continue;
                     }
                     else
                     {
@@ -183,7 +184,7 @@ namespace PoiMapPlus
 
                     var pos = te.ToWorldPos();
                     var inside = PoiRegistry.Contains(_pi, pos);
-                    var rank = LootScore.TryGetRank(storage, out var r) ? r.ToString() : "-";
+                    var rank = LootScore.TryGetRank(storage, PoiRegistry.Tier(_pi), out var r) ? r.ToString() : "-";
 
                     lines.Add($"  {(inside ? "in " : "OUT")} {pos.x},{pos.y},{pos.z} " +
                               $"loot='{storage.lootListName}' rank={rank} " +

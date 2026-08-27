@@ -38,11 +38,19 @@ namespace PoiMapPlus
         public static readonly HashSet<string> LootListIgnore =
             new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
+        /// <summary>One entry of the tracked container table.</summary>
+        public class TrackedContainer
+        {
+            public int Rank;         // 1 is the richest
+            public int MaxPoiTier;   // only counts in POIs up to this tier
+        }
+
         // When this table is not empty only these loot lists count towards clearing a POI,
         // and MinContainerScore no longer applies - the table itself is the filter.
-        // Rank 1 is the richest container; ties are allowed.
-        public static readonly Dictionary<string, int> TrackedRanks =
-            new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        public static readonly Dictionary<string, TrackedContainer> TrackedRanks =
+            new Dictionary<string, TrackedContainer>(StringComparer.OrdinalIgnoreCase);
+
+        public const int cAnyTier = int.MaxValue;
 
         public const int cWorstRank = 9999;
 
@@ -97,7 +105,11 @@ namespace PoiMapPlus
                         var name = (string)e.Attribute("name");
                         if (string.IsNullOrEmpty(name)) continue;
 
-                        TrackedRanks[name] = TryInt((string)e.Attribute("rank"), out var rank) ? rank : cWorstRank;
+                        TrackedRanks[name] = new TrackedContainer
+                        {
+                            Rank = TryInt((string)e.Attribute("rank"), out var rank) ? rank : cWorstRank,
+                            MaxPoiTier = TryInt((string)e.Attribute("max_poi_tier"), out var maxTier) ? maxTier : cAnyTier,
+                        };
                     }
                 }
 

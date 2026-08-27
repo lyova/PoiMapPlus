@@ -20,16 +20,17 @@ namespace PoiMapPlus
         public int BestOpenedRank;  // best rank ever opened here, 0 when nothing was
         public int BestFoundRank;   // best rank still standing in the POI, 0 when none
 
-        // Weapon bags and ammo piles have destroy_on_close, so they vanish once emptied.
-        // BestOpenedRank survives that: looting something at least as rich as whatever is
-        // still standing counts as clearing the POI.
+        // Weapon bags have destroy_on_close, so they vanish once emptied. BestOpenedRank
+        // survives that: looting something at least as rich as whatever is still standing
+        // counts as clearing the POI.
         public bool Cleared
         {
             get
             {
                 if (!Scanned) return false;
 
-                if (TopTotal <= 0) return BestOpenedRank > 0;
+                // Nothing worth tracking in this POI, so there is nothing left to come back for
+                if (TopTotal <= 0) return true;
 
                 if (TopTouched >= TopTotal) return true;
 

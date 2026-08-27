@@ -29,7 +29,7 @@ nothing better exists there. Defaults, richest first:
 | 4 | Reinforced Chest, Wood Crate |
 | 5 | Weapons Bag |
 | 6 | Hidden Stash |
-| 7 | Ammo piles |
+| 7 | Ammo piles, branded boxes from sealed shipping crates |
 
 Containers such as weapon bags and ammo piles vanish from the world once emptied. The mod records
 the rank at the moment the container is opened, so those still count.

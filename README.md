@@ -17,22 +17,17 @@ already been emptied.
 
 ## How "cleared" is decided
 
-The mod watches a configurable list of containers, ordered by rank. In every POI it finds the
-best ranked container actually present and follows that one - lesser containers only matter when
-nothing better exists there. Defaults, richest first:
+The mod follows a ranked list of loot containers, ordered from the richest down to the most
+modest. In every POI it picks the best ranked container that is actually there and watches that
+one - lower ranks only matter when nothing better exists in that POI. Anything not on the list is
+ignored entirely, so opening a nightstand on the way in marks nothing.
 
-| rank | container |
-|------|-----------|
-| 1 | Hardened Chest T5 |
-| 2 | Hardened Chest T4 |
-| 3 | Leather Trunk |
-| 4 | Reinforced Chest, Wood Crate |
-| 5 | Weapons Bag |
-| 6 | Hidden Stash |
-| 7 | Ammo piles, branded boxes from sealed shipping crates |
+The list itself lives in `PoiMapPlus.xml` under `tracked_loot_lists`, where every entry carries a
+`rank` - 1 being the richest. Look there for the current defaults; reordering them or adding your
+own containers is a matter of editing that file.
 
-Containers such as weapon bags and ammo piles vanish from the world once emptied. The mod records
-the rank at the moment the container is opened, so those still count.
+Some containers, weapon bags and ammo piles among them, vanish from the world once emptied. The
+mod records the rank at the moment such a container is opened, so they still count.
 
 ## Requirements
 

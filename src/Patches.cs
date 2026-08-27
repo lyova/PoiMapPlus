@@ -97,14 +97,33 @@ namespace PoiMapPlus
             try
             {
                 TileEntity te = (_tileEntity as TEFeatureAbs)?.Parent ?? _tileEntity as TileEntity;
-                if (te == null) return;
+                var storageFeature = _tileEntity as TEFeatureStorage;
+                var lootList = storageFeature != null ? storageFeature.lootListName : "?";
 
-                var pi = PoiRegistry.FindAt(te.ToWorldPos());
-                if (pi == null) return;
+                if (te == null)
+                {
+                    Log.Out($"[PoiMapPlus] opened '{lootList}': no parent tile entity");
+                    return;
+                }
+
+                var pos = te.ToWorldPos();
+                var pi = PoiRegistry.FindAt(pos);
+
+                if (pi == null)
+                {
+                    Log.Out($"[PoiMapPlus] opened '{lootList}' at {pos.x},{pos.y},{pos.z}: not inside an indexed POI");
+                    return;
+                }
 
                 // Record the opening before scanning: containers with destroy_on_close are gone
                 // from the world by the time we look for them again.
-                if (_tileEntity is TEFeatureStorage storage && LootScore.TryGetRank(storage, out var rank))
+                var rank = 0;
+                var tracked = storageFeature != null && LootScore.TryGetRank(storageFeature, out rank);
+
+                Log.Out($"[PoiMapPlus] opened '{lootList}' in '{PoiRegistry.DisplayName(pi)}': " +
+                        (tracked ? $"rank {rank}" : "not tracked"));
+
+                if (tracked)
                 {
                     var rec = PoiDb.GetOrCreate(pi.boundingBoxPosition.x, pi.boundingBoxPosition.z);
                     if (rec.BestOpenedRank == 0 || rank < rec.BestOpenedRank)

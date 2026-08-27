@@ -12,14 +12,11 @@ It is a small quality of life mod: no new blocks, no new items, no balance chang
 
 [list]
 [*][b]Markers for POIs you have visited.[/b] A marker appears the first time you get close enough for that part of the map to uncover, and stays from then on.
-[*][b]Difficulty on hover.[/b] Name and tier in a tooltip that shows up instantly and disappears the moment you move the cursor away.
+[*][b]Difficulty on hover.[/b] Name and tier in a tooltip
 [*][b]Looted or not, at a glance.[/b] Orange skull while the good loot is still there, green once it is gone.
 [*][b]Follows the best container present.[/b] The mod ranks loot containers and watches the richest one a POI actually has, so a tier 5 chest is what counts in a tier 5 POI, and a weapons bag is what counts where that is all there is.
-[*][b]Handles containers that vanish.[/b] Weapon bags and ammo piles disappear once emptied. The mod records them at the moment you open them, so they still count.
 [*][b]Quest resets are respected.[/b] Reset a POI through a trader quest and its marker goes back to orange.
-[*][b]Works on existing saves.[/b] Explored areas get their markers immediately; looted marks fill in as you revisit POIs.
-[*][b]Configurable.[/b] Which containers count, in what order, the minimum POI tier, whether undiscovered POIs are shown - all in one XML file, no rebuild needed.
-[*][b]Localized[/b] into every language the game ships with, plus Ukrainian.
+[*][b]Works on existing saves.[/b]
 [/list]
 
 [size=4][b]How "cleared" is decided[/b][/size]
@@ -31,15 +28,14 @@ Trash bins, mailboxes and other filler are not on the list at all, so opening a 
 [size=4][b]Requirements[/b][/size]
 
 [list]
-[*]7 Days to Die [b]V 3.2.0[/b]. Built and tested against b9.
-[*]The game must run [b]without EasyAntiCheat[/b]. The mod ships a DLL and EAC blocks those - launch 7DaysToDie.exe directly, or pick the non-EAC option in the Steam launcher.
-[*]No other mods needed. Harmony comes from the game's own 0_TFP_Harmony, so there is nothing extra to install.
+[*]7 Days to Die [b]V 3.2.0+[/b]
+[*]The game must run [b]without EasyAntiCheat[/b]. The mod ships a DLL and EAC blocks those.
 [/list]
 
 [size=4][b]Installation instructions[/b][/size]
 
 [list=1]
-[*]Download the archive.
+[*]Download the archive (or install via Vortex).
 [*]Extract it into your Mods folder so that you end up with [b]Mods\PoiMapPlus\ModInfo.xml[/b]. If your game has no Mods folder yet, create one next to 7DaysToDie.exe.
 [*]Start the game without EasyAntiCheat.
 [/list]
@@ -66,13 +62,6 @@ Everything lives in [b]PoiMapPlus.xml[/b] next to ModInfo.xml, with comments exp
 [*][b]TopContainerCount[/b] - how many of the best containers must be looted before a POI counts as cleared. Default 1.
 [*][b]tracked_loot_lists[/b] - which containers count and in what order.
 [/list]
-
-The config is re-read on every world load, so a trip to the main menu is enough. There are also console commands:
-
-[code]poimap reload    re-read the config and refresh markers
-poimap rescan    reload, forget learned loot state, rescan from scratch
-poimap status    show tracked lists and POI counts
-poimap navdump   list nav objects by class and tracking type[/code]
 
 [size=4][b]Source and permissions[/b][/size]
 

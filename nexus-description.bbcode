@@ -1,65 +1,91 @@
-[size=4][b]POI Map Plus[/b][/size]
+[size=5][b]POI Map Plus[/b][/size]
 
-Open the map and see which POIs you have already stripped, and which still hold their loot room.
+[size=4][b]Description[/b][/size]
 
-[size=3][b]What it does[/b][/size]
+You clear a POI, drive on, and three days later you are standing in front of the same building wondering whether you have already stripped it. POI Map Plus answers that from the map screen.
+
+Every POI you have been to gets a skull marker. Orange means its best container is still untouched. Green means someone already took it. Point at a marker and a tooltip gives you the POI name and its difficulty tier - no permanent labels cluttering the map, nothing revealed about places you have never approached.
+
+It is a small quality of life mod: no new blocks, no new items, no balance changes. It only reads what the game already knows and puts it on the map.
+
+[size=4][b]Main features[/b][/size]
 
 [list]
-[*][b]A marker on every POI you have been to.[/b] It appears the first time you get close enough for that part of the map to uncover, and stays from then on. POIs you have never approached are not shown, so nothing is spoiled ahead of time.
-[*][b]Difficulty on hover.[/b] Point at a marker to see the POI name and its tier. No permanent labels cluttering the map.
-[*][b]Cleared tracking.[/b] Orange skull means the best container in that POI is untouched. Green means someone already took it.
-[*][b]Quest resets are handled.[/b] Reset a POI through a quest and its marker goes back to orange.
+[*][b]Markers for POIs you have visited.[/b] A marker appears the first time you get close enough for that part of the map to uncover, and stays from then on.
+[*][b]Difficulty on hover.[/b] Name and tier in a tooltip that shows up instantly and disappears the moment you move the cursor away.
+[*][b]Looted or not, at a glance.[/b] Orange skull while the good loot is still there, green once it is gone.
+[*][b]Follows the best container present.[/b] The mod ranks loot containers and watches the richest one a POI actually has, so a tier 5 chest is what counts in a tier 5 POI, and a weapons bag is what counts where that is all there is.
+[*][b]Handles containers that vanish.[/b] Weapon bags and ammo piles disappear once emptied. The mod records them at the moment you open them, so they still count.
+[*][b]Quest resets are respected.[/b] Reset a POI through a trader quest and its marker goes back to orange.
+[*][b]Works on existing saves.[/b] Explored areas get their markers immediately; looted marks fill in as you revisit POIs.
+[*][b]Configurable.[/b] Which containers count, in what order, the minimum POI tier, whether undiscovered POIs are shown - all in one XML file, no rebuild needed.
+[*][b]Localized[/b] into every language the game ships with, plus Ukrainian.
 [/list]
 
-[size=3][b]How "cleared" is decided[/b][/size]
+[size=4][b]How "cleared" is decided[/b][/size]
 
-The mod follows a ranked list of loot containers. In each POI it picks the best ranked container that is actually there and watches that one - lesser containers only matter when nothing better exists. Default order, richest first:
+The mod follows a ranked list of loot containers. In each POI it picks the best ranked one that is actually there and watches that container - lower ranks only matter when nothing better exists. Default order, richest first:
 
 [list=1]
 [*]Hardened Chest T5
 [*]Hardened Chest T4
 [*]Leather Trunk
-[*]Reinforced Chest, Wood Crate
+[*]Reinforced Chest and Wood Crate
 [*]Weapons Bag
 [*]Hidden Stash
 [*]Ammo piles
 [/list]
 
-Weapon bags and ammo piles disappear from the world once emptied. The mod notes them at the moment you open them, so they still count.
+Trash bins, mailboxes and other filler are ignored entirely, so opening a nightstand on the way in does not mark anything.
 
-Every bit of that is editable in [b]PoiMapPlus.xml[/b] - which containers count, in what order, the minimum POI tier, whether undiscovered POIs are shown, and the marker budget.
-
-[size=3][b]Requirements[/b][/size]
+[size=4][b]Requirements[/b][/size]
 
 [list]
-[*]7 Days to Die [b]V 3.2.0[/b]
-[*]The game must run [b]without EasyAntiCheat[/b], since the mod ships a DLL. Launch 7DaysToDie.exe directly, or choose the non-EAC option in the Steam launcher.
-[*]Client side only. It does not need to be installed on a server, other players do not need it, and your cleared state lives in your own save. [b]Multiplayer is untested[/b]: it should work as a client on a dedicated server, but so far it has only been played in single player.
+[*]7 Days to Die [b]V 3.2.0[/b]. Built and tested against b9.
+[*]The game must run [b]without EasyAntiCheat[/b]. The mod ships a DLL and EAC blocks those - launch 7DaysToDie.exe directly, or pick the non-EAC option in the Steam launcher.
+[*]No other mods needed. Harmony comes from the game's own 0_TFP_Harmony, so there is nothing extra to install.
 [/list]
 
-[size=3][b]Compatibility[/b][/size]
+[size=4][b]Installation instructions[/b][/size]
 
-Hooks vanilla methods with Harmony postfixes and appends a single nav object class through XPath, so no vanilla file is overwritten. UI overhauls that only restyle the map are fine; a mod replacing the map controller with its own class would leave the markers unhooked. Containers from other mods are supported - add their loot lists to [b]tracked_loot_lists[/b]. Big overhauls like Darkness Falls or Undead Legacy rework loot completely, so the default ranking needs adjusting for them.
+[list=1]
+[*]Download the archive.
+[*]Extract it into your Mods folder so that you end up with [b]Mods\PoiMapPlus\ModInfo.xml[/b]. If your game has no Mods folder yet, create one next to 7DaysToDie.exe.
+[*]Start the game without EasyAntiCheat.
+[/list]
 
-[size=3][b]Installation[/b][/size]
+Vortex and the 7D2D Mod Launcher handle the archive as a normal modlet. To uninstall, delete the folder - the mod only ever writes its own small state file into your save.
 
-Extract into your [b]Mods[/b] folder so that you get [b]Mods\PoiMapPlus\ModInfo.xml[/b]. Vortex and the Mod Launcher handle it as a normal modlet.
+[size=4][b]Multiplayer[/b][/size]
 
-[size=3][b]Console commands[/b][/size]
+The mod is client side only: the server does not need it and neither do the other players. Everything it reads is already on your client, and looted marks live in your own save.
+
+[b]That said, it has only been tested in single player.[/b] It should behave the same as a client on a dedicated server, but nobody has verified that yet - feedback welcome. Marks are personal: they do not sync with what your teammates have looted.
+
+[size=4][b]Compatibility[/b][/size]
+
+Hooks vanilla methods with Harmony postfixes and appends a single nav object class through XPath, so no vanilla config file is overwritten. UI overhauls that only restyle the map are fine; a mod that replaces the map controller with its own class would leave the markers unhooked. Containers added by other mods are supported - put their loot lists into the config. Large overhauls such as Darkness Falls or Undead Legacy rework loot completely, so the default ranking needs adjusting for them.
+
+[size=4][b]Configuration[/b][/size]
+
+Everything lives in [b]PoiMapPlus.xml[/b] next to ModInfo.xml, with comments explaining each setting. The ones people usually touch:
+
+[list]
+[*][b]MinTier[/b] - lowest POI tier that gets a marker. Default 1, which skips tier 0 sheds and ruined booths. Set it to 0 to see everything.
+[*][b]OnlyDiscovered[/b] - set to false to reveal every POI in the world from the start.
+[*][b]TopContainerCount[/b] - how many of the best containers must be looted before a POI counts as cleared. Default 1.
+[*][b]tracked_loot_lists[/b] - which containers count and in what order.
+[/list]
+
+The config is re-read on every world load, so a trip to the main menu is enough. There are also console commands:
 
 [code]poimap reload    re-read the config and refresh markers
 poimap rescan    reload, forget learned loot state, rescan from scratch
 poimap status    show tracked lists and POI counts
 poimap navdump   list nav objects by class and tracking type[/code]
 
-[size=3][b]Existing saves[/b][/size]
+[size=4][b]Source and permissions[/b][/size]
 
-Works on a save you already started. Explored areas get their markers immediately. Cleared marks fill in as you revisit POIs - the game remembers which containers were opened, the mod just needs the chunks loaded to read that.
-
-[size=3][b]Localization[/b][/size]
-
-English, German, Spanish, French, Italian, Japanese, Korean, Polish, Brazilian Portuguese, Turkish, Simplified and Traditional Chinese, plus Ukrainian. Fixing or adding a translation is one cell in Config\Localization.csv, no rebuild needed.
-
-[size=3][b]Permissions[/b][/size]
+Source code is on GitHub: [url=https://github.com/lyova/PoiMapPlus]github.com/lyova/PoiMapPlus[/url]
 
 MIT licensed. Fork it, modify it, bundle it into mod packs - credit is appreciated but not required.

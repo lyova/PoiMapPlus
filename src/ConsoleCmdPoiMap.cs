@@ -22,6 +22,7 @@ namespace PoiMapPlus
             "poimap reload  - re-read PoiMapPlus.xml and refresh map markers" + NewLine +
             "poimap rescan  - reload config, forget scanned POI loot state, rescan on the spot" + NewLine +
             "poimap status  - list tracked loot lists and stored POI records" + NewLine +
+            "poimap here    - dump containers and stored state for the POI you are standing in" + NewLine +
             "poimap navdump - list nav objects by class and tracking type";
 
         static string NewLine => System.Environment.NewLine;
@@ -41,6 +42,10 @@ namespace PoiMapPlus
                     Reload();
                     ForgetLootState();
                     Log.Out("[PoiMapPlus] config reloaded and POI loot state cleared, re-enter a POI to rescan");
+                    break;
+
+                case "here":
+                    Here();
                     break;
 
                 case "navdump":
@@ -89,6 +94,24 @@ namespace PoiMapPlus
             PoiDb.Save();
             PoiMarkers.Clear();
             PoiMarkers.Refresh();
+        }
+
+        /// <summary>Why is this POI's marker the colour it is?</summary>
+        static void Here()
+        {
+            var world = GameManager.Instance != null ? GameManager.Instance.World : null;
+            var player = world != null ? world.GetPrimaryPlayer() : null;
+            if (player == null) { Log.Out("[PoiMapPlus] no local player"); return; }
+
+            var pi = PoiRegistry.FindAt(player.position);
+            if (pi == null)
+            {
+                Log.Out($"[PoiMapPlus] not inside any indexed POI at {player.position}");
+                return;
+            }
+
+            foreach (var line in PoiScanner.Describe(pi))
+                Log.Out("[PoiMapPlus] " + line);
         }
 
         static void Status()

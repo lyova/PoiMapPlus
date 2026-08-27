@@ -11,7 +11,7 @@ namespace PoiMapPlus
         {
             ModPath = _modInstance.Path;
 
-            Log.Out("[PoiMapPlus] инициализация");
+            Log.Out("[PoiMapPlus] init");
 
             Cfg.Load(_modInstance.Path);
             ConsoleCmdPoiMap.SetModPath(_modInstance.Path);

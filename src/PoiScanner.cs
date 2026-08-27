@@ -140,6 +140,69 @@ namespace PoiMapPlus
                         $"({rec.TopTouched}/{rec.TopTotal} top containers, {rec.AllTouched}/{rec.AllTotal} overall)");
         }
 
+        /// <summary>
+        /// Diagnostics for the console command: lists every storage container in the POI's chunks,
+        /// with its rank and looted state, so a wrong marker can be traced to actual data.
+        /// </summary>
+        public static List<string> Describe(PrefabInstance _pi)
+        {
+            var lines = new List<string>();
+            if (_pi == null) { lines.Add("no POI"); return lines; }
+
+            var world = GameManager.Instance != null ? GameManager.Instance.World : null;
+            if (world == null || world.ChunkCache == null) { lines.Add("no world"); return lines; }
+
+            var min = _pi.boundingBoxPosition;
+            var size = _pi.boundingBoxSize;
+
+            lines.Add($"POI '{PoiRegistry.DisplayName(_pi)}' tier={PoiRegistry.Tier(_pi)} " +
+                      $"box={min.x},{min.y},{min.z} size={size.x},{size.y},{size.z}");
+
+            var cx0 = World.toChunkXZ(min.x);
+            var cz0 = World.toChunkXZ(min.z);
+            var cx1 = World.toChunkXZ(min.x + Math.Max(0, size.x - 1));
+            var cz1 = World.toChunkXZ(min.z + Math.Max(0, size.z - 1));
+
+            var missingChunks = 0;
+
+            for (var cx = cx0; cx <= cx1; cx++)
+            for (var cz = cz0; cz <= cz1; cz++)
+            {
+                var chunk = world.ChunkCache.GetChunkSync(cx, cz);
+                if (chunk == null) { missingChunks++; continue; }
+
+                var tileEntities = chunk.GetTileEntities();
+                if (tileEntities == null) continue;
+
+                foreach (var te in tileEntities.list)
+                {
+                    if (!(te is TileEntityComposite composite)) continue;
+
+                    var storage = composite.GetFeature<TEFeatureStorage>();
+                    if (storage == null) continue;
+
+                    var pos = te.ToWorldPos();
+                    var inside = PoiRegistry.Contains(_pi, pos);
+                    var rank = LootScore.TryGetRank(storage, out var r) ? r.ToString() : "-";
+
+                    lines.Add($"  {(inside ? "in " : "OUT")} {pos.x},{pos.y},{pos.z} " +
+                              $"loot='{storage.lootListName}' rank={rank} " +
+                              $"touched={storage.bTouched} player={storage.bPlayerStorage}");
+                }
+            }
+
+            if (missingChunks > 0) lines.Add($"  ({missingChunks} chunk(s) not loaded)");
+
+            var rec = PoiDb.Find(min.x, min.z);
+            lines.Add(rec == null
+                ? "  state: none stored"
+                : $"  state: scanned={rec.Scanned} top={rec.TopTouched}/{rec.TopTotal} " +
+                  $"all={rec.AllTouched}/{rec.AllTotal} bestOpened={rec.BestOpenedRank} " +
+                  $"bestFound={rec.BestFoundRank} cleared={rec.Cleared}");
+
+            return lines;
+        }
+
         /// <summary>A quest reset the POI, so every container is untouched again.</summary>
         public static void ResetPoi(PrefabInstance _pi)
         {

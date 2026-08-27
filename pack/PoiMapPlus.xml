@@ -23,6 +23,10 @@
     <!-- true: only POIs the player has already uncovered on the map. false: every POI in the world -->
     <property name="OnlyDiscovered" value="true" />
 
+    <!-- Log every container opened inside a POI, with its rank. Off by default; turn it on when
+         something is marked wrong, or use the console command "poimap verbose on". -->
+    <property name="Verbose" value="false" />
+
     <!-- Minimum delay between two scans of the same POI -->
     <property name="ScanIntervalSeconds" value="3" />
 

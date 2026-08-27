@@ -75,6 +75,7 @@ Vortex and the Mod Launcher handle the archive as a normal modlet.
 | `MinTier` | `1` | lowest POI difficulty tier that gets a marker; `0` shows sheds too |
 | `OnlyDiscovered` | `true` | `false` reveals every POI in the world from the start |
 | `MaxMarkers` | `600` | cap on simultaneous markers, nearest to the player win |
+| `Verbose` | `false` | log every container opened inside a POI, for troubleshooting |
 | `tracked_loot_lists` | see above | which containers count, and in what order |
 
 Container names are LootLists from `Data/Config/loot.xml`, not block names.
@@ -86,6 +87,8 @@ console:
 poimap reload    re-read the config and refresh markers
 poimap rescan    reload, forget learned loot state, rescan from scratch
 poimap status    show tracked lists and POI counts
+poimap here      dump containers and stored state for the POI you are standing in
+poimap verbose   toggle the per-container logging
 poimap navdump   list nav objects by class and tracking type
 ```
 

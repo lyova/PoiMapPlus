@@ -102,7 +102,7 @@ namespace PoiMapPlus
 
                 if (te == null)
                 {
-                    Log.Out($"[PoiMapPlus] opened '{lootList}': no parent tile entity");
+                    if (Cfg.Verbose) Log.Out($"[PoiMapPlus] opened '{lootList}': no parent tile entity");
                     return;
                 }
 
@@ -111,7 +111,8 @@ namespace PoiMapPlus
 
                 if (pi == null)
                 {
-                    Log.Out($"[PoiMapPlus] opened '{lootList}' at {pos.x},{pos.y},{pos.z}: not inside an indexed POI");
+                    if (Cfg.Verbose)
+                        Log.Out($"[PoiMapPlus] opened '{lootList}' at {pos.x},{pos.y},{pos.z}: not inside an indexed POI");
                     return;
                 }
 
@@ -120,8 +121,9 @@ namespace PoiMapPlus
                 var rank = 0;
                 var tracked = storageFeature != null && LootScore.TryGetRank(storageFeature, out rank);
 
-                Log.Out($"[PoiMapPlus] opened '{lootList}' in '{PoiRegistry.DisplayName(pi)}': " +
-                        (tracked ? $"rank {rank}" : "not tracked"));
+                if (Cfg.Verbose)
+                    Log.Out($"[PoiMapPlus] opened '{lootList}' in '{PoiRegistry.DisplayName(pi)}': " +
+                            (tracked ? $"rank {rank}" : "not tracked"));
 
                 if (tracked)
                 {

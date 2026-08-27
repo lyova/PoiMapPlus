@@ -26,6 +26,9 @@ namespace PoiMapPlus
         // booths and similar filler that rarely holds a tracked container.
         public static int MinTier = 1;
 
+        // Extra logging while troubleshooting: every container opened inside a POI, with its rank.
+        public static bool Verbose;
+
         public static bool OnlyDiscovered = true;
         public static float ScanIntervalSeconds = 3f;
         public static int MaxMarkers = 600;
@@ -121,6 +124,7 @@ namespace PoiMapPlus
                 case "LootStageBonusWeight":  if (TryFloat(_value, out f)) LootStageBonusWeight = f; break;
                 case "LootStageModWeight":    if (TryFloat(_value, out f)) LootStageModWeight = f; break;
                 case "MinTier":               if (TryInt(_value, out i)) MinTier = Math.Max(0, i); break;
+                case "Verbose":               Verbose = string.Equals(_value, "true", StringComparison.OrdinalIgnoreCase); break;
                 case "OnlyDiscovered":        OnlyDiscovered = string.Equals(_value, "true", StringComparison.OrdinalIgnoreCase); break;
                 case "ScanIntervalSeconds":   if (TryFloat(_value, out f)) ScanIntervalSeconds = Math.Max(0.5f, f); break;
                 case "MaxMarkers":            if (TryInt(_value, out i)) MaxMarkers = Math.Max(1, i); break;

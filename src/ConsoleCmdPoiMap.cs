@@ -23,6 +23,7 @@ namespace PoiMapPlus
             "poimap rescan  - reload config, forget scanned POI loot state, rescan on the spot" + NewLine +
             "poimap status  - list tracked loot lists and stored POI records" + NewLine +
             "poimap here    - dump containers and stored state for the POI you are standing in" + NewLine +
+            "poimap verbose [on|off] - log every container opened inside a POI" + NewLine +
             "poimap navdump - list nav objects by class and tracking type";
 
         static string NewLine => System.Environment.NewLine;
@@ -42,6 +43,11 @@ namespace PoiMapPlus
                     Reload();
                     ForgetLootState();
                     Log.Out("[PoiMapPlus] config reloaded and POI loot state cleared, re-enter a POI to rescan");
+                    break;
+
+                case "verbose":
+                    Cfg.Verbose = _params.Count < 2 || !string.Equals(_params[1], "off", System.StringComparison.OrdinalIgnoreCase);
+                    Log.Out($"[PoiMapPlus] verbose logging {(Cfg.Verbose ? "on" : "off")}");
                     break;
 
                 case "here":

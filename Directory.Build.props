@@ -9,7 +9,7 @@
     <DebugType>portable</DebugType>
 
     <!-- Adjust once here if the game lives somewhere else -->
-    <GameDir Condition="'$(GameDir)' == ''">E:\SteamLibrary\steamapps\common\7 Days To Die</GameDir>
+    <GameDir Condition="'$(GameDir)' == ''">D:\SteamLibrary\steamapps\common\7 Days To Die</GameDir>
     <GameManagedDir>$(GameDir)\7DaysToDie_Data\Managed</GameManagedDir>
 
     <!-- src\<Name>.csproj -> the mod folder -->

@@ -23,6 +23,8 @@ namespace PoiMapPlus
             "poimap rescan  - reload config, forget scanned POI loot state, rescan on the spot" + NewLine +
             "poimap status  - list tracked loot lists and stored POI records" + NewLine +
             "poimap here    - dump containers and stored state for the POI you are standing in" + NewLine +
+            "poimap respawn [all] - pretend the emptied chest here (or everywhere) has been " +
+            "restocked, to check the marker without waiting for the timer" + NewLine +
             "poimap verbose [on|off] - log every container opened inside a POI" + NewLine +
             "poimap navdump - list nav objects by class and tracking type";
 
@@ -52,6 +54,11 @@ namespace PoiMapPlus
 
                 case "here":
                     Here();
+                    break;
+
+                case "respawn":
+                    FakeRespawn(_params.Count > 1 &&
+                                string.Equals(_params[1], "all", System.StringComparison.OrdinalIgnoreCase));
                     break;
 
                 case "navdump":
@@ -87,8 +94,10 @@ namespace PoiMapPlus
             foreach (var rec in PoiDb.All)
             {
                 rec.Scanned = false;
-                rec.TopTouched = 0;
-                rec.TopTotal = 0;
+                rec.HasTracked = false;
+                rec.WatchedTouched = false;
+                rec.WatchedEmpty = false;
+                rec.WatchedTouchedHour = 0;
                 rec.AllTouched = 0;
                 rec.AllTotal = 0;
                 rec.BestOpenedRank = 0;
@@ -100,6 +109,72 @@ namespace PoiMapPlus
             PoiDb.Save();
             PoiMarkers.Clear();
             PoiMarkers.Refresh();
+        }
+
+        /// <summary>
+        /// Backdate the watched container so its respawn is already due, for testing the marker
+        /// without waiting days or winding the world clock forward with settime.
+        ///
+        /// Only touches POIs where the chest was actually left empty - the ones the game would
+        /// restock. It changes the mod's own record, not the world, so the next scan of that POI
+        /// puts the truth back.
+        /// </summary>
+        static void FakeRespawn(bool _all)
+        {
+            if (!LootRespawn.Enabled)
+            {
+                Log.Out("[PoiMapPlus] loot respawn is disabled for this world " +
+                        "(Loot Respawn Time), so nothing would come back. Set it with: " +
+                        "setgamepref LootRespawnDays 7");
+                return;
+            }
+
+            var due = LootRespawn.NowHour - LootRespawn.Days * 24;
+            var touched = 0;
+
+            if (_all)
+            {
+                foreach (var rec in PoiDb.All)
+                    if (Backdate(rec, due))
+                        touched++;
+            }
+            else
+            {
+                var world = GameManager.Instance != null ? GameManager.Instance.World : null;
+                var player = world != null ? world.GetPrimaryPlayer() : null;
+                var pi = player != null ? PoiRegistry.FindAt(player.position) : null;
+
+                if (pi == null)
+                {
+                    Log.Out("[PoiMapPlus] stand inside a POI, or use \"poimap respawn all\"");
+                    return;
+                }
+
+                var rec = PoiDb.Find(pi.boundingBoxPosition.x, pi.boundingBoxPosition.z);
+                if (rec == null || !Backdate(rec, due))
+                {
+                    Log.Out($"[PoiMapPlus] '{PoiRegistry.DisplayName(pi)}' has no emptied chest to " +
+                            "bring back - loot it, leave it empty, then walk out of the POI first");
+                    return;
+                }
+                touched = 1;
+            }
+
+            PoiDb.MarkDirty();
+            PoiDb.Save();
+            PoiMarkers.Clear();
+            PoiMarkers.Refresh();
+
+            Log.Out($"[PoiMapPlus] {touched} POI(s) backdated past the {LootRespawn.Days} day " +
+                    "respawn - open the map: the skull turns orange again and the tooltip says " +
+                    "\"loot respawned\". Walking back in re-scans and corrects it.");
+        }
+
+        static bool Backdate(PoiRecord _rec, int _dueHour)
+        {
+            if (!_rec.WatchedTouched || !_rec.WatchedEmpty) return false;
+            _rec.WatchedTouchedHour = _dueHour;
+            return true;
         }
 
         /// <summary>Why is this POI's marker the colour it is?</summary>
@@ -131,14 +206,25 @@ namespace PoiMapPlus
 
             var discovered = 0;
             var cleared = 0;
+            var respawned = 0;
+            var stocked = 0;
             foreach (var rec in PoiDb.All)
             {
                 if (rec.Discovered) discovered++;
                 if (rec.Cleared) cleared++;
+                if (rec.LootRespawned) respawned++;
+                if (rec.Chest == ChestState.Stocked) stocked++;
             }
 
-            Log.Out($"[PoiMapPlus] topN={Cfg.TopContainerCount}, tracked={string.Join(", ", ranks.ToArray())}");
+            Log.Out($"[PoiMapPlus] tracked={string.Join(", ", ranks.ToArray())}");
             Log.Out($"[PoiMapPlus] POIs indexed={PoiRegistry.Pois.Count}, discovered={discovered}, cleared={cleared}");
+            Log.Out($"[PoiMapPlus] loot respawn: {(LootRespawn.Enabled ? LootRespawn.Days + " day(s)" : "disabled")}" +
+                    $", now hour {LootRespawn.NowHour}, respawned since last visit={respawned}, chests left stocked={stocked}");
+            Log.Out($"[PoiMapPlus] markers: iconScale={Cfg.IconScale}, " +
+                    $"chest={(Cfg.ShowChestBadge ? Cfg.ChestSprite : "off")}, tierLabel={Cfg.ShowTierLabel}, "
+                    + $"markers={(UiState.ShowMarkers ? "on" : "off")}");
+            Log.Out($"[PoiMapPlus] icon size last drawn: {(MarkerDecor.LastIconSize > 0 ? MarkerDecor.LastIconSize + " units" : "unknown, open the map once")}" +
+                    $", badges show from {Cfg.BadgeMinSize} up (zoom <= {Cfg.BadgeMaxZoom})");
         }
     }
 }

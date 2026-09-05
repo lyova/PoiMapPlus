@@ -65,15 +65,29 @@ namespace PoiMapPlus
         }
     }
 
-    /// <summary>Player walked into a POI: mark it discovered and scan its loot.</summary>
+    /// <summary>
+    /// Player crossed a POI boundary: scan the one being entered, and re-scan the one being
+    /// left. That last scan matters for the respawn prediction - while the player stands
+    /// within 16 blocks the game keeps pushing worldTimeTouched forward, so the value read on
+    /// the way out is the closest we get to the one the respawn will actually be measured from.
+    /// </summary>
     [HarmonyPatch(typeof(EntityPlayer), nameof(EntityPlayer.onNewPrefabEntered))]
     public static class Patch_Player_OnNewPrefabEntered
     {
+        static PrefabInstance previous;
+
         static void Postfix(EntityPlayer __instance, PrefabInstance _prefabInstance)
         {
             try
             {
-                if (!(__instance is EntityPlayerLocal) || _prefabInstance == null) return;
+                if (!(__instance is EntityPlayerLocal)) return;
+
+                if (previous != null && previous != _prefabInstance)
+                    PoiScanner.Scan(previous, true);
+
+                previous = _prefabInstance;
+
+                if (_prefabInstance == null) return;
 
                 var rec = PoiDb.GetOrCreate(_prefabInstance.boundingBoxPosition.x, _prefabInstance.boundingBoxPosition.z);
                 if (!rec.Discovered)
@@ -85,6 +99,40 @@ namespace PoiMapPlus
                 PoiScanner.Scan(_prefabInstance, true);
             }
             catch (System.Exception e) { Log.Error("[PoiMapPlus] onNewPrefabEntered: " + e); }
+        }
+
+        public static void Forget() => previous = null;
+    }
+
+    /// <summary>
+    /// The loot window closed, so what the player left behind is now settled. Opening a
+    /// container is too early for that: LootManager.LootContainerOpened runs before the loot
+    /// is even generated, and the emptiness of the chest is exactly what decides whether the
+    /// game will ever restock it.
+    /// </summary>
+    [HarmonyPatch(typeof(XUiC_LootWindow), nameof(XUiC_LootWindow.OnClose))]
+    public static class Patch_LootWindow_OnClose
+    {
+        static readonly FieldInfo fiTe = AccessTools.Field(typeof(XUiC_LootWindow), "te");
+
+        static void Postfix(XUiC_LootWindow __instance)
+        {
+            try
+            {
+                if (fiTe == null) return;
+
+                var lootable = fiTe.GetValue(__instance) as ITileEntityLootable;
+                if (lootable == null) return;
+
+                TileEntity te = (lootable as TEFeatureAbs)?.Parent ?? lootable as TileEntity;
+                if (te == null) return;
+
+                var pi = PoiRegistry.FindAt(te.ToWorldPos());
+                if (pi == null) return;
+
+                PoiScanner.Scan(pi, true);
+            }
+            catch (System.Exception e) { Log.Error("[PoiMapPlus] loot window close: " + e); }
         }
     }
 

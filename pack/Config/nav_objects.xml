@@ -1,6 +1,8 @@
 <configs>
 
-    <!-- Nav object class used for POI markers. Sprite and colour are overridden per marker from code. -->
+    <!-- Nav object class used for POI markers. Sprite and colour are overridden per marker from
+         code, and icon_scale is pushed onto this class from IconScale in PoiMapPlus.xml so the
+         marker size lives with the rest of the settings. -->
     <append xpath="/nav_object_classes">
         <nav_object_class name="poimapplus_poi">
             <property name="requirement_type" value="None" />
@@ -11,6 +13,7 @@
                 <property name="color" value="255,255,255,255" />
                 <property name="has_pulse" value="false" />
                 <property name="offset" value="0,0,0" />
+                <property name="icon_scale" value="1" />
             </map_settings>
         </nav_object_class>
     </append>

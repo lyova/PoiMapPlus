@@ -1,4 +1,3 @@
-using System.Reflection;
 using HarmonyLib;
 using UnityEngine;
 
@@ -7,28 +6,23 @@ namespace PoiMapPlus
     /// <summary>
     /// NavObject.GetPosition() dereferences trackedTransform without a null check, so a single
     /// nav object whose transform got destroyed throws inside XUiC_MapArea.updateNavObjectList
-    /// and kills the whole marker layer of the map. Drop such objects before the map walks the list.
+    /// and kills the whole marker layer of the map. Drop such objects before the map walks the
+    /// list.
+    ///
+    /// The sweep runs on every map frame rather than on a timer. It used to be throttled to
+    /// twice a second, which left the hole it was meant to plug: a zombie dying between two
+    /// sweeps still had its nav object drawn, and the map threw. Running from the Update prefix
+    /// closes that - the check and the draw are then in the same frame, with nothing in between
+    /// that could destroy a transform.
+    ///
+    /// Every member touched here is public, so the pass is a couple of field reads per nav
+    /// object and cheap enough to afford at that rate.
     /// </summary>
     public static class NavGuard
     {
-        static readonly FieldInfo fiTrackType = AccessTools.Field(typeof(NavObject), "TrackType");
-        static readonly FieldInfo fiTrackedTransform = AccessTools.Field(typeof(NavObject), "trackedTransform");
-
-        // TrackTypes: 1 = Transform, 2 = Position, 3 = Entity
-        const int cTrackTypeTransform = 1;
-
-        static float nextSweepAt;
-
-        public static void Sweep(bool _force = false)
+        public static void Sweep()
         {
             if (!NavObjectManager.HasInstance) return;
-            if (fiTrackType == null || fiTrackedTransform == null) return;
-
-            if (!_force)
-            {
-                if (Time.time < nextSweepAt) return;
-                nextSweepAt = Time.time + 0.5f;
-            }
 
             var list = NavObjectManager.Instance.NavObjectList;
             if (list == null) return;
@@ -37,10 +31,12 @@ namespace PoiMapPlus
             {
                 var nav = list[i];
                 if (nav == null) continue;
-                if ((int)fiTrackType.GetValue(nav) != cTrackTypeTransform) continue;
 
-                var transform = fiTrackedTransform.GetValue(nav) as Transform;
-                if (transform != null) continue;
+                // Only transform tracked objects can have this problem; ours track a position.
+                if (nav.TrackType != NavObject.TrackTypes.Transform) continue;
+
+                // Unity's fake null: the object is gone but the reference is not literally null
+                if (nav.TrackedTransform != null) continue;
 
                 Log.Warning("[PoiMapPlus] dropping nav object with a dead transform: " +
                             (nav.NavObjectClass != null ? nav.NavObjectClass.NavObjectClassName : "?"));
@@ -63,11 +59,10 @@ namespace PoiMapPlus
                 if (nav == null) continue;
 
                 var cls = nav.NavObjectClass != null ? nav.NavObjectClass.NavObjectClassName : "(no class)";
-                var track = (int)fiTrackType.GetValue(nav);
-                var dead = track == cTrackTypeTransform && !(fiTrackedTransform.GetValue(nav) is Transform t && t != null);
+                var dead = nav.TrackType == NavObject.TrackTypes.Transform && nav.TrackedTransform == null;
                 if (dead) broken++;
 
-                var key = $"{cls} track={track}{(dead ? " DEAD" : "")}";
+                var key = $"{cls} track={nav.TrackType}{(dead ? " DEAD" : "")}";
                 counts.TryGetValue(key, out var n);
                 counts[key] = n + 1;
             }

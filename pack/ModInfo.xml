@@ -2,9 +2,9 @@
 <xml>
     <Name value="PoiMapPlus" />
     <DisplayName value="POI Map Plus" />
-    <Description value="Marks every discovered POI on the map, colours it by difficulty tier and flags the ones whose best loot is already taken." />
+    <Description value="Marks every discovered POI on the map, prints its tier, flags the ones whose best loot is taken - and turns the marker back when the game respawns that loot." />
     <Author value="Lyova" />
-    <Version value="1.0.0" />
+    <Version value="1.1.0" />
     <Website value="" />
     <SkipWithAntiCheat value="true" />
 </xml>

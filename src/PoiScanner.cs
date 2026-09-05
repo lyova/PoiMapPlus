@@ -11,9 +11,11 @@ namespace PoiMapPlus
     {
         struct Entry
         {
-            public float Score;   // used when no whitelist is configured
-            public int Rank;      // used with a whitelist: 1 is the richest
+            public float Score;    // used when no whitelist is configured
+            public int Rank;       // used with a whitelist: 1 is the richest
             public bool Touched;
+            public bool Empty;     // an emptied container is the only kind the game restocks
+            public int TouchedHour;
         }
 
         static readonly List<Entry> buffer = new List<Entry>();
@@ -89,7 +91,14 @@ namespace PoiMapPlus
                     if (storage.bTouched) allTouched++;
 
                     if (Cfg.HasWhitelist || score >= Cfg.MinContainerScore)
-                        buffer.Add(new Entry { Score = score, Rank = rank, Touched = storage.bTouched });
+                        buffer.Add(new Entry
+                        {
+                            Score = score,
+                            Rank = rank,
+                            Touched = storage.bTouched,
+                            Empty = storage.IsEmpty(),
+                            TouchedHour = LootRespawn.HourOf(storage.worldTimeTouched),
+                        });
                 }
             }
 
@@ -102,35 +111,36 @@ namespace PoiMapPlus
             else
                 buffer.Sort((a, b) => b.Score.CompareTo(a.Score));
 
-            var topTotal = Math.Min(Cfg.TopContainerCount, buffer.Count);
-            var topTouched = 0;
-            for (var i = 0; i < topTotal; i++)
-                if (buffer[i].Touched)
-                    topTouched++;
-
-            var bestFoundRank = buffer.Count > 0 ? buffer[0].Rank : 0;
+            // The container the marker follows: whatever ends up first after that sort.
+            var hasTracked = buffer.Count > 0;
+            var watched = hasTracked ? buffer[0] : default;
+            var bestFoundRank = hasTracked ? buffer[0].Rank : 0;
 
             var wasCleared = rec.Cleared;
 
             if (complete)
             {
                 rec.Scanned = true;
+                rec.HasTracked = hasTracked;
                 rec.BestFoundRank = bestFoundRank;
-                rec.TopTotal = topTotal;
-                rec.TopTouched = topTouched;
                 rec.AllTotal = allTotal;
                 rec.AllTouched = allTouched;
+                StoreWatched(rec, watched);
             }
             else
             {
                 // A partial scan must never lower what we already know about this POI.
-                rec.TopTotal = Math.Max(rec.TopTotal, topTotal);
-                rec.TopTouched = Math.Max(rec.TopTouched, topTouched);
                 rec.AllTotal = Math.Max(rec.AllTotal, allTotal);
                 rec.AllTouched = Math.Max(rec.AllTouched, allTouched);
 
                 if (bestFoundRank > 0 && (rec.BestFoundRank == 0 || bestFoundRank < rec.BestFoundRank))
                     rec.BestFoundRank = bestFoundRank;
+
+                if (hasTracked)
+                {
+                    rec.HasTracked = true;
+                    if (watched.Touched) StoreWatched(rec, watched);
+                }
             }
 
             rec.Discovered = true;
@@ -138,7 +148,23 @@ namespace PoiMapPlus
 
             if (!wasCleared && rec.Cleared)
                 Log.Out($"[PoiMapPlus] POI cleared: {PoiRegistry.DisplayName(_pi)} " +
-                        $"({rec.TopTouched}/{rec.TopTotal} top containers, {rec.AllTouched}/{rec.AllTotal} overall)");
+                        $"({rec.AllTouched}/{rec.AllTotal} containers opened, " +
+                        (!rec.HasTracked ? "nothing worth tracking here"
+                            : !rec.WatchedTouched ? "watched chest still shut"
+                            : rec.WatchedEmpty ? "watched chest emptied, loot will come back"
+                            : "watched chest not empty, no respawn") + ")");
+        }
+
+        /// <summary>
+        /// Snapshot of the watched container. worldTimeTouched keeps moving while the player
+        /// stands within 16 blocks, so the value taken here can be a little behind - which
+        /// only makes the predicted respawn slightly early, and the next scan fixes it.
+        /// </summary>
+        static void StoreWatched(PoiRecord _rec, Entry _watched)
+        {
+            _rec.WatchedTouched = _watched.Touched;
+            _rec.WatchedEmpty = _watched.Touched && _watched.Empty;
+            _rec.WatchedTouchedHour = _watched.Touched ? _watched.TouchedHour : 0;
         }
 
         /// <summary>
@@ -185,21 +211,33 @@ namespace PoiMapPlus
                     var pos = te.ToWorldPos();
                     var inside = PoiRegistry.Contains(_pi, pos);
                     var rank = LootScore.TryGetRank(storage, PoiRegistry.Tier(_pi), out var r) ? r.ToString() : "-";
+                    var hour = LootRespawn.HourOf(storage.worldTimeTouched);
 
                     lines.Add($"  {(inside ? "in " : "OUT")} {pos.x},{pos.y},{pos.z} " +
                               $"loot='{storage.lootListName}' rank={rank} " +
-                              $"touched={storage.bTouched} player={storage.bPlayerStorage}");
+                              $"touched={storage.bTouched} empty={storage.IsEmpty()} " +
+                              $"touchedHour={hour} player={storage.bPlayerStorage}");
                 }
             }
 
             if (missingChunks > 0) lines.Add($"  ({missingChunks} chunk(s) not loaded)");
 
             var rec = PoiDb.Find(min.x, min.z);
-            lines.Add(rec == null
-                ? "  state: none stored"
-                : $"  state: scanned={rec.Scanned} top={rec.TopTouched}/{rec.TopTotal} " +
-                  $"all={rec.AllTouched}/{rec.AllTotal} bestOpened={rec.BestOpenedRank} " +
-                  $"bestFound={rec.BestFoundRank} cleared={rec.Cleared}");
+            if (rec == null)
+            {
+                lines.Add("  state: none stored");
+            }
+            else
+            {
+                lines.Add($"  state: scanned={rec.Scanned} hasTracked={rec.HasTracked} " +
+                          $"all={rec.AllTouched}/{rec.AllTotal} bestOpened={rec.BestOpenedRank} " +
+                          $"bestFound={rec.BestFoundRank}");
+                lines.Add($"  watched: touched={rec.WatchedTouched} empty={rec.WatchedEmpty} " +
+                          $"touchedHour={rec.WatchedTouchedHour} chest={rec.Chest}");
+                lines.Add($"  cleared={rec.Cleared} (raw={rec.ClearedRaw}) respawned={rec.LootRespawned} " +
+                          $"respawnDays={LootRespawn.Days} nowHour={LootRespawn.NowHour} " +
+                          $"daysLeft={LootRespawn.DaysLeft(rec.WatchedTouchedHour)}");
+            }
 
             return lines;
         }
@@ -212,9 +250,11 @@ namespace PoiMapPlus
             var rec = PoiDb.Find(_pi.boundingBoxPosition.x, _pi.boundingBoxPosition.z);
             if (rec == null) return;
 
-            rec.TopTouched = 0;
-            rec.AllTouched = 0;
             rec.Scanned = false;
+            rec.AllTouched = 0;
+            rec.WatchedTouched = false;
+            rec.WatchedEmpty = false;
+            rec.WatchedTouchedHour = 0;
             rec.BestOpenedRank = 0;
             rec.BestFoundRank = 0;
             lastScanAt.Remove(rec.Key);

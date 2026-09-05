@@ -1,10 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <poimapplus>
 
-    <!-- How many of the richest containers in a POI must be opened before it counts as cleared.
-         With ranked tracking below, 1 means "watch the single best container present". -->
-    <property name="TopContainerCount" value="1" />
-
     <!-- Containers scoring below this never enter the ranking: trash bins, mailboxes, nightstands -->
     <property name="MinContainerScore" value="25" />
 
@@ -33,10 +29,67 @@
     <!-- Safety net against thousands of markers on a large map -->
     <property name="MaxMarkers" value="600" />
 
+    <!-- ==== Marker looks =====================================================================
+         The map sizes every icon as
+             units = clamp(50 * IconScale * clamp(1/(zoomScale*2), 0.02, 20), 9, 100)
+         with zoomScale running 0.7 (closest) to 6.15 (furthest).
+
+         Those are UI units, not screen pixels: UIRoot scales the whole interface to your
+         resolution on top of this. Left at the vanilla 1: the badges sit outside the skull, so
+         the icon does not have to grow to make room for them. Sizes it goes through:
+             zoom 0.7 -> 35    1.0 -> 25    1.1 -> 22    1.2 -> 20
+             zoom 1.3 -> 19    1.5 -> 16    2.0 -> 12    3.0 and out -> 9
+         This is the starting value; the S/M/L buttons in the map's settings popup write over it
+         and remember the choice per save. Everything in this block is re-read by
+         "poimap reload", so it can be dialled in with the map open. -->
+    <property name="IconScale" value="1" />
+
+    <!-- What S, M and L in that popup mean. M matches IconScale above, so the size the mod
+         ships with is the middle option and the one highlighted on a fresh save. -->
+    <property name="IconScaleSmall" value="0.8" />
+    <property name="IconScaleMedium" value="1" />
+    <property name="IconScaleLarge" value="1.4" />
+
+    <!-- Zoom level past which the chest badge and the tier label are dropped and only the
+         skull is drawn. A zoom rather than a pixel size, so switching S/M/L does not move the
+         cutoff: 1.4 always means "badges up to zoom 1.3, gone from 1.5 out", whatever the
+         markers are sized at. Lower it to lose the badges sooner, raise it to keep them longer.
+         "poimap status" prints both the resulting cutoff and the size the map last drew. -->
+    <property name="BadgeMaxZoom" value="1.4" />
+
+    <property name="ShowChestBadge" value="true" />
+    <property name="ShowTierLabel" value="true" />
+
+    <!-- Chest badge: green once the watched container was left empty, orange while something is
+         still inside it. Size and offsets are fractions of the current icon size, measured from
+         the centre of the skull with X to the right and Y up, so the layout holds at every zoom.
+         The offset points at the centre of the badge, so the badge clears the skull only while
+         hypot(OffsetX, OffsetY) - ChestScale/2 stays above 0.5. Pull the offsets in and it starts
+         overlapping the skull instead of sitting next to it.
+         ChestSprite is any sprite name from the game's UIAtlas - ui_game_symbol_loot_sack and
+         ui_game_symbol_safe also read well when filled with a flat colour. -->
+    <property name="ChestSprite" value="ui_game_symbol_treasure" />
+    <property name="ChestScale" value="0.42" />
+    <property name="ChestOffsetX" value="0.60" />
+    <property name="ChestOffsetY" value="0.46" />
+
+    <!-- Tier label, drawn as text so it stays crisp at any size. The offset points at the
+         bottom left corner of the text, which is the corner it grows away from, so the same
+         hypot(OffsetX, OffsetY) > 0.5 rule keeps it clear of the skull.
+         TierScale is the font height: 0.44 gives 11 units on the default zoom, 15 on the
+         closest. The font never goes below 8 units, so the label stays legible while it lasts. -->
+    <property name="TierScale" value="0.44" />
+    <property name="TierOffsetX" value="0.48" />
+    <property name="TierOffsetY" value="-0.52" />
+
+    <!-- Tier colours: below TierMid white, TierMid itself orange, above it red -->
+    <property name="TierMid" value="3" />
+
     <!-- Only these loot lists count towards clearing a POI; everything else is ignored
          completely and MinContainerScore no longer applies.
          rank=1 is the richest. The mod looks at the best ranked container actually present in
-         the POI and follows that one - lower ranks only matter when nothing better exists there.
+         the POI and follows that one, and only that one - lower ranks only matter when nothing
+         better exists there.
          max_poi_tier limits an entry to POIs up to that tier, so a container can count as the
          prize in a small POI without competing with real loot room chests in a big one.
          If a POI holds nothing from this list at all, it is treated as cleared right away.

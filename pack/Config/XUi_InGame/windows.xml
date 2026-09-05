@@ -1,0 +1,118 @@
+<configs>
+
+    <!-- A gear in the bottom right corner of the map, and the popup it opens.
+
+         Everything goes into the map window's "content" rect rather than into "mapView": mapView
+         handles press and drag for the map itself, so a button parented to it would drop a
+         waypoint under the cursor along with doing its own job. Sitting beside mapView with a
+         higher depth keeps the clicks ours.
+
+         Three things here are load bearing and easy to lose:
+
+         * style="press" - XUiView.OnClick returns before doing anything unless EventOnPress is
+           set, and that flag comes from this style. Without it a button is silent, not broken.
+         * globalopacitymod="0" - otherwise the game's UI background opacity setting is applied
+           on top of the colour, and the popup goes see through.
+         * a non zero alpha on anything clickable - NGUI will not raycast a fully transparent
+           widget, so an invisible button swallows nothing and the click falls through to the map.
+
+         No controller attribute anywhere on purpose: the XUi resolver looks controller names up
+         with Type.GetType, which only sees the game's own assembly, so a class from a mod is
+         never found. MapSettings wires the handlers up from code, by name. -->
+    <append xpath="/windows/window[@name='mapArea']/rect[@name='content']">
+
+        <!-- Everything the mod adds lives in this panel, spanning the whole map area.
+
+             NGUI only compares widget depth inside one panel; between panels it is the panel
+             depth that decides. The map's nav icons sit in a panel of their own, so a plain
+             widget - however deep - ends up underneath them. 100 puts ours on top for good.
+
+             The panel sits at 0,0 so its children keep the same coordinates they would have
+             had directly under "content". -->
+        <panel name="poimapplusLayer" depth="100" pos="0,0" width="718" height="770">
+
+            <!-- The gear itself -->
+            <button name="poimapplusGear" depth="6" style="icon32px, press, hover" hoverscale="1" pivot="center"
+                    pos="690,-726" sprite="ui_game_symbol_twitch_settings_2"
+                    globalopacitymod="0"
+                    tooltip_key="poimapplusGearTip" sound="[paging_click]" />
+
+            <rect name="poimapplusPanel" pos="474,-520" width="240" height="184" visible="false">
+
+                <sprite depth="1" name="panelBg" sprite="menu_empty" type="sliced" fillcenter="true"
+                        width="240" height="184" color="14,14,14,255" globalopacitymod="0" />
+                <sprite depth="2" name="panelFrame" sprite="menu_empty3px" type="sliced" fillcenter="false"
+                        width="240" height="184" color="120,120,120,255" globalopacitymod="0" />
+
+                <!-- Three toggles. Each row is one wide button with a tick and a caption drawn
+                     over it; those two have no collider, so the click lands on the row. -->
+                <button name="poimapplusRowMarkers" depth="3" style="press, hover" hoverscale="1" pos="8,-8"
+                        width="224" height="34" sprite="menu_empty" type="sliced" fillcenter="true"
+                        defaultcolor="38,38,38,255" hovercolor="66,66,66,255"
+                        globalopacitymod="0" sound="[paging_click]" />
+                <sprite depth="4" name="tickMarkers" pos="14,-13" width="24" height="24"
+                        sprite="ui_game_symbol_check" globalopacitymod="0" />
+                <label depth="4" name="textMarkers" pos="46,-12" width="182" height="26"
+                       text_key="poimapplusOptMarkers" font_size="22" justify="left" />
+
+                <button name="poimapplusRowTier" depth="3" style="press, hover" hoverscale="1" pos="8,-44"
+                        width="224" height="34" sprite="menu_empty" type="sliced" fillcenter="true"
+                        defaultcolor="38,38,38,255" hovercolor="66,66,66,255"
+                        globalopacitymod="0" sound="[paging_click]" />
+                <sprite depth="4" name="tickTier" pos="14,-49" width="24" height="24"
+                        sprite="ui_game_symbol_check" globalopacitymod="0" />
+                <label depth="4" name="textTier" pos="46,-48" width="182" height="26"
+                       text_key="poimapplusOptTier" font_size="22" justify="left" />
+
+                <button name="poimapplusRowChest" depth="3" style="press, hover" hoverscale="1" pos="8,-80"
+                        width="224" height="34" sprite="menu_empty" type="sliced" fillcenter="true"
+                        defaultcolor="38,38,38,255" hovercolor="66,66,66,255"
+                        globalopacitymod="0" sound="[paging_click]" />
+                <sprite depth="4" name="tickChest" pos="14,-85" width="24" height="24"
+                        sprite="ui_game_symbol_check" globalopacitymod="0" />
+                <label depth="4" name="textChest" pos="46,-84" width="150" height="26"
+                       text_key="poimapplusOptChest" font_size="22" justify="left" />
+                <!-- Hover target for the chest badge explanation. It carries a collider of its
+                     own, so pointing at it does not toggle the row underneath. -->
+                <sprite depth="5" name="poimapplusChestHelp" style="hover" pos="202,-87"
+                        width="20" height="20" sprite="ui_game_symbol_info_notice"
+                        color="140,140,140,255" globalopacitymod="0"
+                        tooltip_key="poimapplusChestHelpTip" />
+
+                <!-- Marker size: three presets rather than a number to type. hovercolor matches
+                     defaultcolor so they do not react to the cursor at all - the only thing
+                     these three say is which one is picked. -->
+                <sprite depth="3" name="divider" pos="8,-118" width="224" height="2"
+                        sprite="menu_empty" type="sliced" fillcenter="true"
+                        color="80,80,80,255" globalopacitymod="0" />
+                <label depth="4" name="textSize" pos="14,-124" width="140" height="24"
+                       text_key="poimapplusOptSize" font_size="20" justify="left" color="150,150,150,255" />
+
+                <button name="poimapplusSizeS" depth="3" style="press" hoverscale="1" pos="14,-150"
+                        width="68" height="28" sprite="menu_empty" type="sliced" fillcenter="true"
+                        defaultcolor="55,55,55,255" hovercolor="55,55,55,255"
+                        globalopacitymod="0" sound="[paging_click]" />
+                <label depth="4" name="labelSizeS" pos="14,-154" width="68" height="24"
+                       text="S" font_size="20" justify="center" />
+
+                <button name="poimapplusSizeM" depth="3" style="press" hoverscale="1" pos="86,-150"
+                        width="68" height="28" sprite="menu_empty" type="sliced" fillcenter="true"
+                        defaultcolor="55,55,55,255" hovercolor="55,55,55,255"
+                        globalopacitymod="0" sound="[paging_click]" />
+                <label depth="4" name="labelSizeM" pos="86,-154" width="68" height="24"
+                       text="M" font_size="20" justify="center" />
+
+                <button name="poimapplusSizeL" depth="3" style="press" hoverscale="1" pos="158,-150"
+                        width="68" height="28" sprite="menu_empty" type="sliced" fillcenter="true"
+                        defaultcolor="55,55,55,255" hovercolor="55,55,55,255"
+                        globalopacitymod="0" sound="[paging_click]" />
+                <label depth="4" name="labelSizeL" pos="158,-154" width="68" height="24"
+                       text="L" font_size="20" justify="center" />
+
+            </rect>
+
+        </panel>
+
+    </append>
+
+</configs>

@@ -16,7 +16,9 @@ namespace PoiMapPlus
             Cfg.Load(_modInstance.Path);
             ConsoleCmdPoiMap.SetModPath(_modInstance.Path);
 
-            new Harmony("com.lyovi.poimapplus").PatchAll(Assembly.GetExecutingAssembly());
+            var harmony = new Harmony("com.lyovi.poimapplus");
+            harmony.PatchAll(Assembly.GetExecutingAssembly());
+            Patch_MapArea_UpdateNavObjectList.Apply(harmony);
 
             ModEvents.GameStartDone.RegisterHandler(OnGameStartDone);
             ModEvents.SavePlayerData.RegisterHandler(OnSavePlayerData);
@@ -35,6 +37,7 @@ namespace PoiMapPlus
             Cfg.Load(ModPath);
 
             PoiDb.Load();
+            UiState.Load();
             PoiRegistry.Build();
         }
 
@@ -54,6 +57,11 @@ namespace PoiMapPlus
             PoiScanner.Clear();
             PoiRegistry.Clear();
             PoiDb.Reset();
+
+            // These hold references into the world and the UI that are going away
+            Patch_Player_OnNewPrefabEntered.Forget();
+            MapSettings.Forget();
+            UiState.Reset();
         }
     }
 }

@@ -3,7 +3,14 @@ using UnityEngine;
 
 namespace PoiMapPlus
 {
-    /// <summary>POI markers on the map: colour is the difficulty tier, icon tells cleared from untouched.</summary>
+    /// <summary>What MarkerDecor has to draw on top of one skull.</summary>
+    public class MarkerInfo
+    {
+        public int Tier;
+        public ChestState Chest;
+    }
+
+    /// <summary>POI markers on the map: the skull says looted or not, the badges say the details.</summary>
     public static class PoiMarkers
     {
         const string cNavClass = "poimapplus_poi";
@@ -15,20 +22,35 @@ namespace PoiMapPlus
         // as a permanent label under the icon. We show it as a tooltip on hover instead.
         static readonly Dictionary<NavObject, string> tooltips = new Dictionary<NavObject, string>();
 
-        // Difficulty lives in the tooltip; the icon colour only says looted or not.
-        static readonly Color openColor = new Color(1.00f, 0.55f, 0.15f);
-        static readonly Color clearedColor = new Color(0.35f, 0.85f, 0.35f);
+        // Per marker state for the decorator, which runs from the map's own update loop.
+        static readonly Dictionary<NavObject, MarkerInfo> infos = new Dictionary<NavObject, MarkerInfo>();
+
+        // Difficulty lives in the tier label; the skull colour only says looted or not.
+        public static readonly Color OpenColor = new Color(1.00f, 0.55f, 0.15f);
+        public static readonly Color ClearedColor = new Color(0.35f, 0.85f, 0.35f);
 
         static readonly List<PrefabInstance> visible = new List<PrefabInstance>();
 
         static readonly HashSet<NavObject> liveNavObjects = new HashSet<NavObject>();
 
+        public static int MarkerCount => markers.Count;
+
         public static void Refresh()
         {
             if (!NavObjectManager.HasInstance) return;
+
+            // Global toggle: the tracking keeps running, only the map goes quiet.
+            if (!UiState.ShowMarkers)
+            {
+                if (markers.Count > 0) Clear();
+                return;
+            }
+
             if (!PoiRegistry.IsBuilt) PoiRegistry.Build();
 
-            NavGuard.Sweep(true);
+            ApplyIconScale();
+            RescanHere();
+            NavGuard.Sweep();
 
             // The game unregisters nav objects on its own (quests, world events) and recycles them
             // through a pool. A marker we still hold a reference to may already belong to something
@@ -81,6 +103,45 @@ namespace PoiMapPlus
             }
         }
 
+        /// <summary>
+        /// Re-scan the POI the player is standing in, right before drawing the markers.
+        ///
+        /// Everything else that updates a record is an event - a container opened, a loot window
+        /// closed, a POI entered or left - and any of those can be missed or arrive in an order
+        /// that leaves the marker a step behind: emptying a chest and opening the map without
+        /// moving used to keep showing the previous chest state. This makes the map show what is
+        /// actually there whenever it is opened, whatever happened before it.
+        ///
+        /// It costs one scan of one POI, and only while the player is inside one.
+        /// </summary>
+        static void RescanHere()
+        {
+            var world = GameManager.Instance != null ? GameManager.Instance.World : null;
+            var player = world != null ? world.GetPrimaryPlayer() : null;
+            if (player == null) return;
+
+            var pi = PoiRegistry.FindAt(player.position);
+            if (pi != null) PoiScanner.Scan(pi, true);
+        }
+
+        /// <summary>
+        /// The nav object class comes from nav_objects.xml, but the marker size belongs with
+        /// the rest of the mod's settings - so it is pushed onto the class instead, which also
+        /// makes "poimap reload" enough to try a different value.
+        /// </summary>
+        static void ApplyIconScale()
+        {
+            var cls = NavObjectClass.GetNavObjectClass(cNavClass);
+            if (cls == null) return;
+
+            foreach (var settings in new[] { cls.MapSettings, cls.InactiveMapSettings })
+            {
+                if (settings == null) continue;
+                settings.IconScale = Cfg.IconScale;
+                settings.IconScaleVector = new Vector3(Cfg.IconScale, Cfg.IconScale, Cfg.IconScale);
+            }
+        }
+
         static Vector3 PlayerPosition()
         {
             var world = GameManager.Instance != null ? GameManager.Instance.World : null;
@@ -130,7 +191,7 @@ namespace PoiMapPlus
 
             if (!markers.TryGetValue(key, out var nav) || nav == null || !liveNavObjects.Contains(nav))
             {
-                if (nav != null) tooltips.Remove(nav);
+                if (nav != null) Forget(nav);
 
                 // hiddenOnCompass must stay false: the map paints such icons plain grey
                 // and ignores OverrideColor. The class has no compass_settings anyway,
@@ -148,17 +209,25 @@ namespace PoiMapPlus
 
             nav.OverrideSpriteName = cSprite;
             nav.UseOverrideColor = true;
-            nav.OverrideColor = cleared ? clearedColor : openColor;
+            nav.OverrideColor = cleared ? ClearedColor : OpenColor;
 
             // Clicking a marker toggles this flag, which would grey the icon out.
             nav.hiddenOnCompass = false;
 
-            // An empty name keeps the map from drawing a permanent label under the icon.
+            // The map draws DisplayName as a label under the icon. That label is free - it
+            // exists on every nav object already - so the tier rides on it, and MarkerDecor
+            // moves it next to the skull and colours it by tier.
+            var tier = PoiRegistry.Tier(_pi);
             nav.usingLocalizationId = false;
             nav.localizedName = null;
-            nav.name = string.Empty;
+            nav.name = UiState.TierVisible && tier > 0 ? "T" + tier : string.Empty;
 
             tooltips[nav] = Loc.MarkerLabel(_pi, _rec);
+            infos[nav] = new MarkerInfo
+            {
+                Tier = tier,
+                Chest = _rec != null ? _rec.Chest : ChestState.Unknown,
+            };
         }
 
         static void Remove(PrefabInstance _pi)
@@ -168,7 +237,7 @@ namespace PoiMapPlus
 
             if (nav != null)
             {
-                tooltips.Remove(nav);
+                Forget(nav);
 
                 if (NavObjectManager.HasInstance)
                     NavObjectManager.Instance.UnRegisterNavObject(nav);
@@ -177,9 +246,19 @@ namespace PoiMapPlus
             markers.Remove(key);
         }
 
+        static void Forget(NavObject _nav)
+        {
+            tooltips.Remove(_nav);
+            infos.Remove(_nav);
+        }
+
         /// <summary>Hover text for a marker, or null when the nav object is not ours.</summary>
         public static string TooltipFor(NavObject _nav) =>
             _nav != null && tooltips.TryGetValue(_nav, out var text) ? text : null;
+
+        /// <summary>Badge state for a marker, or null when the nav object is not ours.</summary>
+        public static MarkerInfo InfoFor(NavObject _nav) =>
+            _nav != null && infos.TryGetValue(_nav, out var info) ? info : null;
 
         public static void Clear()
         {
@@ -190,6 +269,7 @@ namespace PoiMapPlus
 
             markers.Clear();
             tooltips.Clear();
+            infos.Clear();
         }
     }
 }

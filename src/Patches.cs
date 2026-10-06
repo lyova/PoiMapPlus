@@ -121,10 +121,8 @@ namespace PoiMapPlus
             {
                 if (fiTe == null) return;
 
-                var lootable = fiTe.GetValue(__instance) as ITileEntityLootable;
-                if (lootable == null) return;
-
-                TileEntity te = (lootable as TEFeatureAbs)?.Parent ?? lootable as TileEntity;
+                var storage = fiTe.GetValue(__instance) as TEFeatureStorage;
+                TileEntity te = storage?.Parent;
                 if (te == null) return;
 
                 var pi = PoiRegistry.FindAt(te.ToWorldPos());
@@ -140,12 +138,12 @@ namespace PoiMapPlus
     [HarmonyPatch(typeof(LootManager), nameof(LootManager.LootContainerOpened))]
     public static class Patch_LootManager_LootContainerOpened
     {
-        static void Postfix(ITileEntityLootable _tileEntity)
+        static void Postfix(TEFeatureStorage _tileEntity)
         {
             try
             {
-                TileEntity te = (_tileEntity as TEFeatureAbs)?.Parent ?? _tileEntity as TileEntity;
-                var storageFeature = _tileEntity as TEFeatureStorage;
+                TileEntity te = _tileEntity?.Parent;
+                var storageFeature = _tileEntity;
                 var lootList = storageFeature != null ? storageFeature.lootListName : "?";
 
                 if (te == null)

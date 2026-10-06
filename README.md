@@ -2,7 +2,7 @@
 
 **[Download on Nexus Mods](https://www.nexusmods.com/7daystodie/mods/12271)**
 
-A client-side modlet for **7 Days to Die V 3.2.0** that turns the map into a useful planning tool:
+A client-side modlet for **7 Days to Die V 3.3** that turns the map into a useful planning tool:
 every POI you have uncovered gets a marker, and the marker tells you whether its loot room has
 already been emptied.
 
@@ -74,7 +74,7 @@ chest badge still works, the marker simply never goes back to orange.
 
 ## Requirements
 
-- 7 Days to Die **V 3.2.0**
+- 7 Days to Die **V 3.3**. Built and tested against b18.
 - Launch **without EasyAntiCheat** - the mod ships a DLL, and EAC blocks those. Start the game
   from `7DaysToDie.exe`, or pick the non-EAC option in the Steam launcher.
 - Single player, and multiplayer clients - see below.
@@ -159,7 +159,7 @@ poimap navdump   list nav objects by class and tracking type
 
 ## Localization
 
-`Config/Localization.csv` covers every language the game ships with: English, German, Spanish,
+`Config/Localization.csv` covers every language the game ships with except Russian: English, German, Spanish,
 French, Italian, Japanese, Korean, Polish, Brazilian Portuguese, Turkish, Simplified and
 Traditional Chinese, plus a Ukrainian column. Adding or fixing a translation is one cell in that
 file - no rebuild needed.

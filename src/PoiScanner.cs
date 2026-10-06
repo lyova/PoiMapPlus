@@ -87,17 +87,20 @@ namespace PoiMapPlus
                         if (score <= LootScore.cIgnored) continue;
                     }
 
+                    var grid = storage.ItemGrid;
+                    if (grid == null) continue;
+
                     allTotal++;
-                    if (storage.bTouched) allTouched++;
+                    if (grid.Touched) allTouched++;
 
                     if (Cfg.HasWhitelist || score >= Cfg.MinContainerScore)
                         buffer.Add(new Entry
                         {
                             Score = score,
                             Rank = rank,
-                            Touched = storage.bTouched,
+                            Touched = grid.Touched,
                             Empty = storage.IsEmpty(),
-                            TouchedHour = LootRespawn.HourOf(storage.worldTimeTouched),
+                            TouchedHour = LootRespawn.HourOf(grid.WorldTimeTouched),
                         });
                 }
             }
@@ -156,7 +159,7 @@ namespace PoiMapPlus
         }
 
         /// <summary>
-        /// Snapshot of the watched container. worldTimeTouched keeps moving while the player
+        /// Snapshot of the watched container. WorldTimeTouched keeps moving while the player
         /// stands within 16 blocks, so the value taken here can be a little behind - which
         /// only makes the predicted respawn slightly early, and the next scan fixes it.
         /// </summary>
@@ -211,12 +214,13 @@ namespace PoiMapPlus
                     var pos = te.ToWorldPos();
                     var inside = PoiRegistry.Contains(_pi, pos);
                     var rank = LootScore.TryGetRank(storage, PoiRegistry.Tier(_pi), out var r) ? r.ToString() : "-";
-                    var hour = LootRespawn.HourOf(storage.worldTimeTouched);
+                    var grid = storage.ItemGrid;
+                    var hour = grid != null ? LootRespawn.HourOf(grid.WorldTimeTouched) : 0;
 
                     lines.Add($"  {(inside ? "in " : "OUT")} {pos.x},{pos.y},{pos.z} " +
                               $"loot='{storage.lootListName}' rank={rank} " +
-                              $"touched={storage.bTouched} empty={storage.IsEmpty()} " +
-                              $"touchedHour={hour} player={storage.bPlayerStorage}");
+                              $"touched={grid?.Touched} empty={storage.IsEmpty()} " +
+                              $"touchedHour={hour} player={grid?.PlayerOwned}");
                 }
             }
 

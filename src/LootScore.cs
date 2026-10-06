@@ -21,7 +21,7 @@ namespace PoiMapPlus
         {
             _rank = Cfg.cWorstRank;
 
-            if (_storage == null || _storage.bPlayerStorage) return false;
+            if (_storage == null || _storage.ItemGrid == null || _storage.ItemGrid.PlayerOwned) return false;
             if (!Cfg.HasWhitelist) return false;
 
             var lootList = _storage.lootListName;
@@ -38,7 +38,7 @@ namespace PoiMapPlus
         public static float Evaluate(TileEntityComposite _te, TEFeatureStorage _storage)
         {
             if (_te == null || _storage == null) return cIgnored;
-            if (_storage.bPlayerStorage) return cIgnored;
+            if (_storage.ItemGrid == null || _storage.ItemGrid.PlayerOwned) return cIgnored;
 
             var lootList = _storage.lootListName;
             if (string.IsNullOrEmpty(lootList)) return cIgnored;
@@ -46,7 +46,7 @@ namespace PoiMapPlus
             if (Cfg.HasWhitelist && !Cfg.TrackedRanks.ContainsKey(lootList)) return cIgnored;
             if (Cfg.LootListScores.TryGetValue(lootList, out var forced)) return forced;
 
-            var size = _storage.GetContainerSize();
+            var size = _storage.ItemGrid.ContainerSize;
             var slots = size.x * size.y;
 
             var container = LootContainer.GetLootContainer(lootList, false);

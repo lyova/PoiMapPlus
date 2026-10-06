@@ -3,6 +3,14 @@
 Versions here are the mod's own. On Nexus this mod is numbered after the game version it was
 first published for, so 1.1.0 is released there as **3.3** and 1.0.0 was **3.2**.
 
+## 1.1.1
+
+Released on Nexus as **3.3.1**.
+
+- Updated for 7 Days to Die V 3.3. The mod failed to load on 3.3, and this build does not run on
+  3.2 or older - stay on 1.1.0 there.
+- Removed the Russian translation.
+
 ## 1.1.0
 
 - Cleared POIs turn orange again once the game respawns their loot, predicted from stored state

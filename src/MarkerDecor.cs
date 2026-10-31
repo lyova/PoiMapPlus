@@ -6,7 +6,7 @@ using UnityEngine;
 namespace PoiMapPlus
 {
     /// <summary>
-    /// Draws the chest badge and the tier label on top of our skulls.
+    /// Draws the chest badge, the tier label and the finder's name on top of our skulls.
     ///
     /// The map builds one GameObject per nav object from its prefabMapSprite, with a "Sprite"
     /// (UISprite) and a "Name" (UILabel) child, and resizes the sprite every frame from the
@@ -20,6 +20,7 @@ namespace PoiMapPlus
     public static class MarkerDecor
     {
         const string cBadgeChild = "PoiMapPlusChest";
+        const string cFinderChild = "PoiMapPlusFinder";
         const string cSpriteChild = "Sprite";
         const string cLabelChild = "Name";
 
@@ -32,6 +33,7 @@ namespace PoiMapPlus
         static readonly Color TierLow = new Color(1.00f, 1.00f, 1.00f);
         static readonly Color TierMid = new Color(1.00f, 0.55f, 0.15f);
         static readonly Color TierHigh = new Color(1.00f, 0.25f, 0.25f);
+        static readonly Color FinderColor = new Color(0.85f, 0.85f, 0.85f);
 
         /// <summary>
         /// Size the map last drew our icons at, in UI units. Reported by "poimap status": it is
@@ -84,6 +86,48 @@ namespace PoiMapPlus
 
             ApplyTier(_go, skull, _info, size, room);
             ApplyChest(_map, _go, skull, _info, size, room);
+            ApplyFinder(_go, skull, _info, size, room);
+        }
+
+        /// <summary>The teammate who found the POI, centred under the skull.</summary>
+        static void ApplyFinder(GameObject _go, UISprite _skull, MarkerInfo _info, int _size, bool _room)
+        {
+            var wanted = _room && !string.IsNullOrEmpty(_info.Finder);
+            var finderTransform = _go.transform.Find(cFinderChild);
+
+            if (!wanted)
+            {
+                if (finderTransform != null && finderTransform.gameObject.activeSelf)
+                    finderTransform.gameObject.SetActive(false);
+                return;
+            }
+
+            // The map assigns its label font at runtime, so it is borrowed from there every frame
+            var source = _go.transform.Find(cLabelChild)?.GetComponent<UILabel>();
+            if (source == null || source.font == null) return;
+
+            var label = finderTransform != null ? finderTransform.GetComponent<UILabel>() : null;
+            if (label == null)
+            {
+                label = NGUITools.AddChild<UILabel>(_go);
+                if (label == null) return;
+
+                label.gameObject.name = cFinderChild;
+                label.pivot = UIWidget.Pivot.Top;
+                label.overflowMethod = UILabel.Overflow.ResizeFreely;
+                label.effectStyle = UILabel.Effect.Outline;
+                label.effectColor = Color.black;
+            }
+
+            if (!label.gameObject.activeSelf) label.gameObject.SetActive(true);
+            if (!label.enabled) label.enabled = true;
+            if (!ReferenceEquals(label.font, source.font)) label.font = source.font;
+
+            if (label.text != _info.Finder) label.text = _info.Finder;
+            label.color = FinderColor;
+            label.depth = _skull.depth + 2;
+            label.fontSize = Mathf.Max(8, Mathf.RoundToInt(_size * Cfg.FinderScale));
+            label.transform.localPosition = new Vector3(0f, -_size * Cfg.FinderOffsetY, 0f);
         }
 
         static void ApplyTier(GameObject _go, UISprite _skull, MarkerInfo _info, int _size, bool _room)

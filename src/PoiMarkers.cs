@@ -8,6 +8,7 @@ namespace PoiMapPlus
     {
         public int Tier;
         public ChestState Chest;
+        public string Finder;   // drawn under the skull, null for none
     }
 
     /// <summary>POI markers on the map: the skull says looted or not, the badges say the details.</summary>
@@ -24,6 +25,9 @@ namespace PoiMapPlus
 
         // Per marker state for the decorator, which runs from the map's own update loop.
         static readonly Dictionary<NavObject, MarkerInfo> infos = new Dictionary<NavObject, MarkerInfo>();
+
+        // Which POI a marker stands for, so a click on it can be stored
+        static readonly Dictionary<NavObject, PrefabInstance> owners = new Dictionary<NavObject, PrefabInstance>();
 
         // Difficulty lives in the tier label; the skull colour only says looted or not.
         public static readonly Color OpenColor = new Color(1.00f, 0.55f, 0.15f);
@@ -62,8 +66,6 @@ namespace PoiMapPlus
                     if (nav != null)
                         liveNavObjects.Add(nav);
 
-            var fow = GameManager.Instance != null ? GameManager.Instance.fowDatabaseForLocalPlayer : null;
-
             visible.Clear();
 
             foreach (var pi in PoiRegistry.Pois)
@@ -72,7 +74,9 @@ namespace PoiMapPlus
 
                 var rec = PoiDb.Find(pi.boundingBoxPosition.x, pi.boundingBoxPosition.z);
 
-                if (Cfg.OnlyDiscovered && !IsDiscovered(pi, fow, rec))
+                var own = rec != null && rec.Discovered;
+                if (!own && (UiState.OnlyMine || Cfg.OnlyDiscovered &&
+                             !PartyShare.HasShared(pi.boundingBoxPosition.x, pi.boundingBoxPosition.z)))
                 {
                     Remove(pi);
                     continue;
@@ -158,32 +162,16 @@ namespace PoiMapPlus
             return dx * dx + dz * dz;
         }
 
-        static bool IsDiscovered(PrefabInstance _pi, IMapChunkDatabase _fow, PoiRecord _rec)
+        static void Upsert(PrefabInstance _pi, PoiRecord _own)
         {
-            if (_rec != null && _rec.Discovered) return true;
-            if (_fow == null) return false;
+            var x = _pi.boundingBoxPosition.x;
+            var z = _pi.boundingBoxPosition.z;
+            var key = PoiRecord.MakeKey(x, z);
 
-            var min = _pi.boundingBoxPosition;
-            var size = _pi.boundingBoxSize;
-            var cx = World.toChunkXZ(min.x + size.x / 2);
-            var cz = World.toChunkXZ(min.z + size.z / 2);
-
-            if (!_fow.Contains(WorldChunkCache.MakeChunkKey(cx, cz))) return false;
-
-            // Remember it, so the POI does not disappear if the fog of war data is rebuilt.
-            var rec = _rec ?? PoiDb.GetOrCreate(min.x, min.z);
-            if (!rec.Discovered)
-            {
-                rec.Discovered = true;
-                PoiDb.MarkDirty();
-            }
-            return true;
-        }
-
-        static void Upsert(PrefabInstance _pi, PoiRecord _rec)
-        {
-            var key = PoiRecord.MakeKey(_pi.boundingBoxPosition.x, _pi.boundingBoxPosition.z);
-            var cleared = _rec != null && _rec.Cleared;
+            // The loot is the same for the whole party, so the latest look at it wins
+            PartyShare.CatchUp(x, z);
+            var rec = PartyShare.FreshestFor(x, z, _own);
+            var cleared = rec != null && rec.Cleared;
 
             var min = _pi.boundingBoxPosition;
             var size = _pi.boundingBoxSize;
@@ -193,10 +181,10 @@ namespace PoiMapPlus
             {
                 if (nav != null) Forget(nav);
 
-                // hiddenOnCompass must stay false: the map paints such icons plain grey
-                // and ignores OverrideColor. The class has no compass_settings anyway,
-                // so POIs never reach the compass.
-                nav = NavObjectManager.Instance.RegisterNavObject(cNavClass, center, cSprite, false, -1, null);
+                // With hiddenOnCompass set the map paints the icon plain grey and ignores
+                // OverrideColor, so it starts cleared and only a stored click turns it on.
+                // The class has no compass_settings anyway, so POIs never reach the compass.
+                nav =NavObjectManager.Instance.RegisterNavObject(cNavClass, center, cSprite, false, -1, null);
                 if (nav == null) return;
 
                 markers[key] = nav;
@@ -211,8 +199,9 @@ namespace PoiMapPlus
             nav.UseOverrideColor = true;
             nav.OverrideColor = cleared ? ClearedColor : OpenColor;
 
-            // Clicking a marker toggles this flag, which would grey the icon out.
-            nav.hiddenOnCompass = false;
+            // A click on the map toggles this flag and greys the icon out; the record keeps it
+            nav.hiddenOnCompass = _own != null && _own.Dimmed;
+            owners[nav] = _pi;
 
             // The map draws DisplayName as a label under the icon. That label is free - it
             // exists on every nav object already - so the tier rides on it, and MarkerDecor
@@ -222,11 +211,16 @@ namespace PoiMapPlus
             nav.localizedName = null;
             nav.name = UiState.TierVisible && tier > 0 ? "T" + tier : string.Empty;
 
-            tooltips[nav] = Loc.MarkerLabel(_pi, _rec);
+            // Someone else's name is worth showing anywhere; one's own only next to a party
+            var finder = PartyShare.FinderFor(x, z, _own, out var mine);
+            var named = finder != null && (!mine || PartyShare.InParty);
+
+            tooltips[nav] = Loc.MarkerLabel(_pi, rec, named ? finder : null, mine);
             infos[nav] = new MarkerInfo
             {
                 Tier = tier,
-                Chest = _rec != null ? _rec.Chest : ChestState.Unknown,
+                Chest = rec != null ? rec.Chest : ChestState.Unknown,
+                Finder = UiState.FinderVisible && finder != null && !mine ? finder : null,
             };
         }
 
@@ -250,6 +244,20 @@ namespace PoiMapPlus
         {
             tooltips.Remove(_nav);
             infos.Remove(_nav);
+            owners.Remove(_nav);
+        }
+
+        /// <summary>The map just toggled a marker grey or back: remember it for this POI.</summary>
+        public static void OnClicked(NavObject _nav)
+        {
+            if (_nav == null || !owners.TryGetValue(_nav, out var pi) || pi == null) return;
+
+            var rec = PoiDb.GetOrCreate(pi.boundingBoxPosition.x, pi.boundingBoxPosition.z);
+            if (rec.Dimmed == _nav.hiddenOnCompass) return;
+
+            rec.Dimmed = _nav.hiddenOnCompass;
+            PoiDb.MarkDirty();
+            PoiDb.Save();
         }
 
         /// <summary>Hover text for a marker, or null when the nav object is not ours.</summary>
@@ -270,6 +278,7 @@ namespace PoiMapPlus
             markers.Clear();
             tooltips.Clear();
             infos.Clear();
+            owners.Clear();
         }
     }
 }

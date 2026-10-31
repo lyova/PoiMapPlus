@@ -38,6 +38,25 @@ namespace PoiMapPlus
         public int BestOpenedRank;  // best rank ever opened here, 0 when nothing was
         public int BestFoundRank;   // best rank still standing in the POI, 0 when none
 
+        // When the loot state above was last seen (world time). The world is one for the whole
+        // party, so between two players' records the fresher one is the truth.
+        public ulong ScannedAt;
+
+        // Greyed out by a click on the map, the same toggle every vanilla marker has. Personal,
+        // never shared.
+        public bool Dimmed;
+
+        // Not stored: the row predates OpenedContainers, so its next scan adopts what the game
+        // says is opened instead of finding nothing on the list
+        public bool Adopt;
+
+        // Who uncovered the POI first, among this player and their party, and when (world
+        // time). Older saves never recorded it, which reads as "this player, long ago".
+        // FinderKey is the finder's PartyShare.LocalKey: names repeat, entity ids can change
+        public string FinderName;
+        public string FinderKey;
+        public ulong FinderAt;
+
         /// <summary>Whether the loot has been taken, ignoring respawn.</summary>
         public bool ClearedRaw
         {
@@ -81,6 +100,8 @@ namespace PoiMapPlus
 
         public string Key => MakeKey(X, Z);
 
+        public PoiRecord Clone() => (PoiRecord)MemberwiseClone();
+
         public static string MakeKey(int _x, int _z) =>
             _x.ToString(CultureInfo.InvariantCulture) + "," + _z.ToString(CultureInfo.InvariantCulture);
     }
@@ -89,10 +110,12 @@ namespace PoiMapPlus
     public static class PoiDb
     {
         const string cFileName = "PoiMapPlus.csv";
-        const int cVersion = 4;
+        const int cVersion = 5;
 
-        // v4 rows carry 12 columns, everything before it stopped at 10
+        // v4 rows carry 12 columns, everything before it stopped at 10. v5 appends five, so a
+        // v4 build reading a v5 file still finds everything it knows where it expects it.
         const int cColumnsV4 = 12;
+        const int cColumnsV5 = 17;
 
         static readonly Dictionary<string, PoiRecord> records = new Dictionary<string, PoiRecord>();
         static string filePath;
@@ -116,15 +139,57 @@ namespace PoiMapPlus
 
         public static void MarkDirty() => dirty = true;
 
+        /// <summary>
+        /// Where the mod keeps its files for the current game. A client on someone else's server
+        /// has no world save of its own: the game keeps its data under SavesLocal instead.
+        /// </summary>
+        public static bool StateDirKnown
+        {
+            get
+            {
+                var cm = ConnectionManager.Instance;
+                return cm == null || cm.IsServer ||
+                       !string.IsNullOrEmpty(GamePrefs.GetString(EnumGamePrefs.GameGuidClient));
+            }
+        }
+
+        public static string StateDir()
+        {
+            var cm = ConnectionManager.Instance;
+            if (cm == null || cm.IsServer) return GameIO.GetSaveGameDir();
+
+            var dir = GameIO.GetSaveGameLocalDir();
+            if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+            return dir;
+        }
+
+        /// <summary>The local player has uncovered this POI: credit them unless someone was earlier.</summary>
+        public static void MarkDiscovered(PoiRecord _rec)
+        {
+            if (_rec == null || _rec.Discovered) return;
+
+            _rec.Discovered = true;
+            if (string.IsNullOrEmpty(_rec.FinderName))
+            {
+                _rec.FinderName = PartyShare.LocalName;
+                _rec.FinderKey = PartyShare.LocalKey;
+                _rec.FinderAt = PartyShare.Now;
+            }
+            dirty = true;
+        }
+
         public static void Load()
         {
+            // A client may have scanned something before its files could be found
+            var early = new List<PoiRecord>(records.Values);
+
             records.Clear();
             dirty = false;
             filePath = null;
 
             try
             {
-                var dir = GameIO.GetSaveGameDir();
+                var dir = StateDir();
                 if (string.IsNullOrEmpty(dir))
                 {
                     Log.Warning("[PoiMapPlus] save game folder unavailable, POI state will not persist");
@@ -132,6 +197,7 @@ namespace PoiMapPlus
                 }
 
                 filePath = Path.Combine(dir, cFileName);
+                OpenedContainers.Load(dir);
                 if (!File.Exists(filePath))
                 {
                     Log.Out("[PoiMapPlus] fresh save, no POI state yet");
@@ -148,6 +214,7 @@ namespace PoiMapPlus
                     if (p.Length < 8) continue;
 
                     var rec = p.Length >= cColumnsV4 ? ReadV4(p) : ReadLegacy(p, ref upgraded);
+                    rec.Adopt = p.Length < cColumnsV5;
                     records[rec.Key] = rec;
                 }
 
@@ -158,6 +225,42 @@ namespace PoiMapPlus
             {
                 Log.Error("[PoiMapPlus] failed to read POI state: " + e.Message);
             }
+            finally
+            {
+                foreach (var rec in early)
+                    if (!records.ContainsKey(rec.Key))
+                    {
+                        records[rec.Key] = rec;
+                        dirty = true;
+                    }
+            }
+        }
+
+        /// <summary>One record as a line of the state file. The party file uses the same rows.</summary>
+        public static void AppendRow(StringBuilder _sb, PoiRecord _rec)
+        {
+            _sb.Append(_rec.X).Append(';').Append(_rec.Z).Append(';')
+               .Append(_rec.Discovered ? '1' : '0').Append(';')
+               .Append(_rec.Scanned ? '1' : '0').Append(';')
+               .Append(_rec.HasTracked ? '1' : '0').Append(';')
+               .Append(_rec.WatchedTouched ? '1' : '0').Append(';')
+               .Append(_rec.WatchedEmpty ? '1' : '0').Append(';')
+               .Append(_rec.WatchedTouchedHour).Append(';')
+               .Append(_rec.AllTouched).Append(';').Append(_rec.AllTotal).Append(';')
+               .Append(_rec.BestOpenedRank).Append(';').Append(_rec.BestFoundRank).Append(';')
+               .Append(_rec.ScannedAt).Append(';')
+               .Append(_rec.Dimmed ? '1' : '0').Append(';')
+               .Append(_rec.FinderAt).Append(';')
+               .Append(CleanName(_rec.FinderKey)).Append(';')
+               .Append(CleanName(_rec.FinderName))
+               .AppendLine();
+        }
+
+        /// <summary>A current format row back into a record, or null when it is too short.</summary>
+        public static PoiRecord ParseRow(string _line)
+        {
+            var p = _line.Split(';');
+            return p.Length >= cColumnsV5 ? ReadV4(p) : null;
         }
 
         static PoiRecord ReadV4(string[] _p) => new PoiRecord
@@ -174,6 +277,11 @@ namespace PoiMapPlus
             AllTotal           = ParseInt(_p[9]),
             BestOpenedRank     = ParseInt(_p[10]),
             BestFoundRank      = ParseInt(_p[11]),
+            ScannedAt          = _p.Length >= cColumnsV5 ? ParseULong(_p[12]) : 0,
+            Dimmed             = _p.Length >= cColumnsV5 && _p[13] == "1",
+            FinderAt           = _p.Length >= cColumnsV5 ? ParseULong(_p[14]) : 0,
+            FinderKey          = _p.Length >= cColumnsV5 && _p[15].Length > 0 ? _p[15] : null,
+            FinderName         = _p.Length >= cColumnsV5 && _p[16].Length > 0 ? _p[16] : null,
         };
 
         /// <summary>
@@ -213,6 +321,7 @@ namespace PoiMapPlus
 
         public static void Save(bool _force = false)
         {
+            OpenedContainers.Save(_force);
             if (!_force && !dirty) return;
             if (string.IsNullOrEmpty(filePath)) return;
 
@@ -221,21 +330,10 @@ namespace PoiMapPlus
                 var sb = new StringBuilder();
                 sb.Append("# PoiMapPlus v").Append(cVersion)
                   .AppendLine(" | x;z;discovered;scanned;hasTracked;watchedTouched;watchedEmpty;" +
-                              "watchedTouchedHour;allTouched;allTotal;bestOpenedRank;bestFoundRank");
+                              "watchedTouchedHour;allTouched;allTotal;bestOpenedRank;bestFoundRank;" +
+                              "scannedAt;dimmed;finderAt;finderKey;finderName");
 
-                foreach (var rec in records.Values)
-                {
-                    sb.Append(rec.X).Append(';').Append(rec.Z).Append(';')
-                      .Append(rec.Discovered ? '1' : '0').Append(';')
-                      .Append(rec.Scanned ? '1' : '0').Append(';')
-                      .Append(rec.HasTracked ? '1' : '0').Append(';')
-                      .Append(rec.WatchedTouched ? '1' : '0').Append(';')
-                      .Append(rec.WatchedEmpty ? '1' : '0').Append(';')
-                      .Append(rec.WatchedTouchedHour).Append(';')
-                      .Append(rec.AllTouched).Append(';').Append(rec.AllTotal).Append(';')
-                      .Append(rec.BestOpenedRank).Append(';').Append(rec.BestFoundRank)
-                      .AppendLine();
-                }
+                foreach (var rec in records.Values) AppendRow(sb, rec);
 
                 File.WriteAllText(filePath, sb.ToString());
                 dirty = false;
@@ -248,6 +346,7 @@ namespace PoiMapPlus
 
         public static void Reset()
         {
+            OpenedContainers.Reset();
             records.Clear();
             filePath = null;
             dirty = false;
@@ -255,5 +354,13 @@ namespace PoiMapPlus
 
         static int ParseInt(string _s) =>
             int.TryParse(_s, NumberStyles.Integer, CultureInfo.InvariantCulture, out var v) ? v : 0;
+
+        static ulong ParseULong(string _s) =>
+            ulong.TryParse(_s, NumberStyles.Integer, CultureInfo.InvariantCulture, out var v) ? v : 0;
+
+        /// <summary>A player name is free text; the file is split on ';' and on lines.</summary>
+        public static string CleanName(string _name) =>
+            string.IsNullOrEmpty(_name) ? string.Empty
+            : _name.Replace(';', ',').Replace('\r', ' ').Replace('\n', ' ');
     }
 }

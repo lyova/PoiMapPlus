@@ -85,6 +85,11 @@
     <!-- Tier colours: below TierMid white, TierMid itself orange, above it red -->
     <property name="TierMid" value="3" />
 
+    <!-- Teammate name under the skull, shown with Show discoverer in a party: font size and
+         how far below the centre of the icon, as fractions of the icon size -->
+    <property name="FinderScale" value="0.38" />
+    <property name="FinderOffsetY" value="0.55" />
+
     <!-- Only these loot lists count towards clearing a POI; everything else is ignored
          completely and MinContainerScore no longer applies.
          rank=1 is the richest. The mod looks at the best ranked container actually present in

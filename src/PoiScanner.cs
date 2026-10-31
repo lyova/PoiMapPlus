@@ -48,6 +48,10 @@ namespace PoiMapPlus
             var cz1 = World.toChunkXZ(min.z + Math.Max(0, size.z - 1));
 
             var poiTier = PoiRegistry.Tier(_pi);
+
+            // Once this player knows the POI is looted - by their own hand or told by the party -
+            // the game's flags only confirm it, so the containers it marks are taken as known
+            var trustGame = rec.Adopt || rec.ClearedRaw;
             var complete = true;
             var allTotal = 0;
             var allTouched = 0;
@@ -90,15 +94,17 @@ namespace PoiMapPlus
                     var grid = storage.ItemGrid;
                     if (grid == null) continue;
 
+                    var touched = OpenedContainers.Opened(te.ToWorldPos(), grid.Touched, trustGame);
+
                     allTotal++;
-                    if (grid.Touched) allTouched++;
+                    if (touched) allTouched++;
 
                     if (Cfg.HasWhitelist || score >= Cfg.MinContainerScore)
                         buffer.Add(new Entry
                         {
                             Score = score,
                             Rank = rank,
-                            Touched = grid.Touched,
+                            Touched = touched,
                             Empty = storage.IsEmpty(),
                             TouchedHour = LootRespawn.HourOf(grid.WorldTimeTouched),
                         });
@@ -123,9 +129,11 @@ namespace PoiMapPlus
 
             if (complete)
             {
+                rec.Adopt = false;
                 rec.Scanned = true;
                 rec.HasTracked = hasTracked;
                 rec.BestFoundRank = bestFoundRank;
+                rec.ScannedAt = PartyShare.Now;
                 rec.AllTotal = allTotal;
                 rec.AllTouched = allTouched;
                 StoreWatched(rec, watched);
@@ -142,11 +150,15 @@ namespace PoiMapPlus
                 if (hasTracked)
                 {
                     rec.HasTracked = true;
-                    if (watched.Touched) StoreWatched(rec, watched);
+                    if (watched.Touched)
+                    {
+                        StoreWatched(rec, watched);
+                        rec.ScannedAt = PartyShare.Now;
+                    }
                 }
             }
 
-            rec.Discovered = true;
+            PoiDb.MarkDiscovered(rec);
             PoiDb.MarkDirty();
 
             if (!wasCleared && rec.Cleared)
@@ -246,6 +258,22 @@ namespace PoiMapPlus
             return lines;
         }
 
+        /// <summary>This player opened a container: remember its rank, in case it vanishes once empty.</summary>
+        public static void NoteOpened(PrefabInstance _pi, TEFeatureStorage _storage)
+        {
+            if (_pi == null || _storage == null) return;
+            if (LootScore.TryGetRank(_storage, PoiRegistry.Tier(_pi), out var rank)) NoteRank(_pi, rank);
+        }
+
+        public static void NoteRank(PrefabInstance _pi, int _rank)
+        {
+            var rec = PoiDb.GetOrCreate(_pi.boundingBoxPosition.x, _pi.boundingBoxPosition.z);
+            if (rec.BestOpenedRank != 0 && _rank >= rec.BestOpenedRank) return;
+
+            rec.BestOpenedRank = _rank;
+            PoiDb.MarkDirty();
+        }
+
         /// <summary>A quest reset the POI, so every container is untouched again.</summary>
         public static void ResetPoi(PrefabInstance _pi)
         {
@@ -261,6 +289,7 @@ namespace PoiMapPlus
             rec.WatchedTouchedHour = 0;
             rec.BestOpenedRank = 0;
             rec.BestFoundRank = 0;
+            rec.ScannedAt = PartyShare.Now;
             lastScanAt.Remove(rec.Key);
             PoiDb.MarkDirty();
 

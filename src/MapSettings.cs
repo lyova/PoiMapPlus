@@ -4,8 +4,8 @@ using UnityEngine;
 namespace PoiMapPlus
 {
     /// <summary>
-    /// The gear in the corner of the map and the popup behind it: three toggles plus a marker
-    /// size picker. The widgets come from the XML patch; everything here is the wiring, done by
+    /// The gear in the corner of the map and the popup behind it: three toggles, a marker size
+    /// picker and the multiplayer toggles. The widgets come from the XML patch; everything here is the wiring, done by
     /// name so no modded XUi controller class has to be resolved.
     ///
     /// With markers off the other two rows are dimmed and stop responding - a greyed out row
@@ -24,9 +24,9 @@ namespace PoiMapPlus
         static readonly Color SizeIdle = new Color(0.24f, 0.24f, 0.24f);
 
         static XUiController panel;
-        static XUiController rowMarkers, rowTier, rowChest;
-        static XUiController tickMarkers, tickTier, tickChest;
-        static XUiController textMarkers, textTier, textChest;
+        static XUiController rowMarkers, rowTier, rowChest, rowFinder, rowOnlyMine;
+        static XUiController tickMarkers, tickTier, tickChest, tickFinder, tickOnlyMine;
+        static XUiController textMarkers, textTier, textChest, textFinder, textOnlyMine;
         static XUiController sizeS, sizeM, sizeL;
         static bool wired;
 
@@ -71,14 +71,20 @@ namespace PoiMapPlus
             rowMarkers = panel.GetChildById("poimapplusRowMarkers");
             rowTier = panel.GetChildById("poimapplusRowTier");
             rowChest = panel.GetChildById("poimapplusRowChest");
+            rowFinder = panel.GetChildById("poimapplusRowFinder");
+            rowOnlyMine = panel.GetChildById("poimapplusRowOnlyMine");
 
             tickMarkers = panel.GetChildById("tickMarkers");
             tickTier = panel.GetChildById("tickTier");
             tickChest = panel.GetChildById("tickChest");
+            tickFinder = panel.GetChildById("tickFinder");
+            tickOnlyMine = panel.GetChildById("tickOnlyMine");
 
             textMarkers = panel.GetChildById("textMarkers");
             textTier = panel.GetChildById("textTier");
             textChest = panel.GetChildById("textChest");
+            textFinder = panel.GetChildById("textFinder");
+            textOnlyMine = panel.GetChildById("textOnlyMine");
 
             sizeS = panel.GetChildById("poimapplusSizeS");
             sizeM = panel.GetChildById("poimapplusSizeM");
@@ -87,6 +93,8 @@ namespace PoiMapPlus
             if (rowMarkers != null) rowMarkers.OnPress += (_s, _b) => ToggleMarkers();
             if (rowTier != null) rowTier.OnPress += (_s, _b) => ToggleTier();
             if (rowChest != null) rowChest.OnPress += (_s, _b) => ToggleChest();
+            if (rowFinder != null) rowFinder.OnPress += (_s, _b) => ToggleFinder();
+            if (rowOnlyMine != null) rowOnlyMine.OnPress += (_s, _b) => ToggleOnlyMine();
 
             if (sizeS != null) sizeS.OnPress += (_s, _b) => PickSize(Cfg.IconScaleSmall);
             if (sizeM != null) sizeM.OnPress += (_s, _b) => PickSize(Cfg.IconScaleMedium);
@@ -107,12 +115,18 @@ namespace PoiMapPlus
             Check(missing, "rowMarkers", rowMarkers);
             Check(missing, "rowTier", rowTier);
             Check(missing, "rowChest", rowChest);
+            Check(missing, "rowFinder", rowFinder);
+            Check(missing, "rowOnlyMine", rowOnlyMine);
             Check(missing, "tickMarkers", tickMarkers);
             Check(missing, "tickTier", tickTier);
             Check(missing, "tickChest", tickChest);
+            Check(missing, "tickFinder", tickFinder);
+            Check(missing, "tickOnlyMine", tickOnlyMine);
             Check(missing, "textMarkers", textMarkers);
             Check(missing, "textTier", textTier);
             Check(missing, "textChest", textChest);
+            Check(missing, "textFinder", textFinder);
+            Check(missing, "textOnlyMine", textOnlyMine);
             Check(missing, "sizeS", sizeS);
             Check(missing, "sizeM", sizeM);
             Check(missing, "sizeL", sizeL);
@@ -175,6 +189,26 @@ namespace PoiMapPlus
             Refresh();
         }
 
+        static void ToggleFinder()
+        {
+            if (!UiState.ShowMarkers) return;
+            UiState.ShowFinder = !UiState.ShowFinder;
+            UiState.Save();
+            Refresh();
+
+            // The name is part of the marker state written while upserting
+            PoiMarkers.Refresh();
+        }
+
+        static void ToggleOnlyMine()
+        {
+            if (!UiState.ShowMarkers) return;
+            UiState.OnlyMine = !UiState.OnlyMine;
+            UiState.Save();
+            Refresh();
+            PoiMarkers.Refresh();
+        }
+
         static void PickSize(float _scale)
         {
             if (!UiState.ShowMarkers) return;
@@ -193,6 +227,8 @@ namespace PoiMapPlus
             PaintRow(rowMarkers, tickMarkers, textMarkers, UiState.ShowMarkers, true);
             PaintRow(rowTier, tickTier, textTier, Cfg.ShowTierLabel, UiState.ShowMarkers);
             PaintRow(rowChest, tickChest, textChest, Cfg.ShowChestBadge, UiState.ShowMarkers);
+            PaintRow(rowFinder, tickFinder, textFinder, UiState.ShowFinder, UiState.ShowMarkers);
+            PaintRow(rowOnlyMine, tickOnlyMine, textOnlyMine, UiState.OnlyMine, UiState.ShowMarkers);
 
             PaintSize(sizeS, Cfg.IconScaleSmall);
             PaintSize(sizeM, Cfg.IconScaleMedium);
@@ -239,9 +275,9 @@ namespace PoiMapPlus
         {
             panel = null;
             warned = false;
-            rowMarkers = rowTier = rowChest = null;
-            tickMarkers = tickTier = tickChest = null;
-            textMarkers = textTier = textChest = null;
+            rowMarkers = rowTier = rowChest = rowFinder = rowOnlyMine = null;
+            tickMarkers = tickTier = tickChest = tickFinder = tickOnlyMine = null;
+            textMarkers = textTier = textChest = textFinder = textOnlyMine = null;
             sizeS = sizeM = sizeL = null;
             wired = false;
         }

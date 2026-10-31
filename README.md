@@ -2,15 +2,15 @@
 
 **[Download on Nexus Mods](https://www.nexusmods.com/7daystodie/mods/12271)**
 
-A client-side modlet for **7 Days to Die V 3.3** that turns the map into a useful planning tool:
-every POI you have uncovered gets a marker, and the marker tells you whether its loot room has
+A client-side modlet for **7 Days to Die V 3.3 or newer** that turns the map into a useful planning tool:
+every POI you have been to gets a marker, and the marker tells you whether its loot room has
 already been emptied.
 
 ## What it does
 
-- **Markers for every POI you have been to.** A marker appears the first time you get close
-  enough for that part of the map to uncover, and stays from then on. Nothing is revealed ahead
-  of time - POIs you have never approached stay invisible.
+- **Markers for every POI you have been to.** A marker appears the first time you walk into a
+  POI, and stays from then on. Nothing is revealed ahead of time - POIs you have never entered
+  stay invisible.
 - **The skull says whether it is worth going.** Orange means the good loot is still there, green
   means it is gone.
 - **The tier is printed on the marker.** `T1`-`T2` white, `T3` orange, `T4`+ red, so a glance at
@@ -23,8 +23,13 @@ already been emptied.
   by then it effectively is.
 - **Hover for details.** The tooltip spells the state out: `cleared, looted` or
   `cleared, chest not empty`.
+- **Greyed out markers stay grey.** Clicking a marker on the map greys it out, the same as any
+  vanilla marker; the mod remembers that per POI, across map visits and restarts.
+- **Party sharing.** With the mod on the server too, party members see each other's POIs, and
+  each marker can name the teammate who found it first - see [Multiplayer](#multiplayer).
 - **Settings on the map itself.** A gear in the bottom right corner opens a small popup:
-  markers on or off, tier label on or off, chest badge on or off, and marker size as S / M / L.
+  markers on or off, tier label on or off, chest badge on or off, marker size as S / M / L, and
+  a Multiplayer group with `Show discoverer` and `Only my POIs`.
   Turning the markers off leaves the tracking running - the map just goes quiet.
 - **Quest resets are handled.** Take a quest that resets a POI and its marker goes back to orange.
 
@@ -74,24 +79,56 @@ chest badge still works, the marker simply never goes back to orange.
 
 ## Requirements
 
-- 7 Days to Die **V 3.3**. Built and tested against b18.
+- 7 Days to Die **V 3.3 or newer**. Built against V 3.4.0 (b9).
 - Launch **without EasyAntiCheat** - the mod ships a DLL, and EAC blocks those. Start the game
   from `7DaysToDie.exe`, or pick the non-EAC option in the Steam launcher.
 - Single player, and multiplayer clients - see below.
 
 ## Multiplayer
 
-The mod is purely client-side: only you install it, the server does not need it and neither do the
-other players. Everything it reads - the POI list, the fog of war, the state of loot containers -
-is already on the client, and the cleared state lives in your own save.
+Play with friends and the map becomes the party's map.
 
-That said, **it has only been tested in single player**. It should behave the same as a client on
-a dedicated server, but nobody has verified that yet. Feedback welcome. Cleared marks are yours
-alone: they do not sync with what teammates have looted.
+- **See where your party has been.** Every POI a teammate visits shows up on your map, and yours
+  on theirs. Nothing to set up - join a party and it just works.
+- **Loot state is shared too.** A teammate empties the chest - your marker turns green as well.
+- **Markers stay.** A teammate's POIs remain on your map after they log off or leave the party,
+  and survive restarts.
+- **Who found it.** `Show discoverer` puts the name of the teammate who found a POI first under
+  the skull. The tooltip always says who it was - or that it was you.
+- **Going solo again.** Everything you learned in the party stays yours. `Only my POIs` hides the
+  places only your teammates have been to; untick it and they come back.
+- **No free intel.** Only chests you or your party opened count. A stranger emptying a POI does
+  not show up on your map - you find out when you open the chest, like everyone else.
+- **Greying out stays personal.** A marker you grey out is greyed out for you only.
+
+**Setup.** On its own the mod is client-side: only you install it, and the server and the other
+players do not need it. The party features need it on the **server** as well, and once the
+server has it, **every player on it needs the mod too** - the game turns away a client without it.
+
+Multiplayer has had less testing than single player - feedback welcome.
+
+### Under the hood
+
+- Party records travel in a network package of the mod's own, which the server forwards to the
+  sender's party. That is why the server needs the mod, and why the game's package check at
+  connect then requires it from every client.
+- The game remembers that a container was opened, not by whom. So in multiplayer the mod keeps
+  its own list of containers you opened (`PoiMapPlus.opened.csv`), and only those count; what the
+  party tells you is written into your own record and stays after you leave it. In single player
+  the game's own flag is used as it is.
+- Where you and a teammate both have a record of a POI, knowing it is looted beats not knowing,
+  an emptied chest beats one with something left in it, and between equals the latest look wins.
+  Out of a party a POI you have a record of is drawn from that record alone.
+- Teammates' markers are kept in `PoiMapPlus.party.csv`. Players are told apart by a key each
+  player's mod makes up once and keeps in `PoiMapPlus.ui`, not by name or entity id - two players
+  may share a name, and a client can come back to a server as a new entity.
+- Playing as a client on someone else's server, the mod's files live in the game's `SavesLocal`
+  folder for that server.
 
 ## Compatibility
 
-- Hooks vanilla methods with Harmony postfixes (`XUiC_MapArea`, `LootManager.LootContainerOpened`,
+- Hooks vanilla methods with Harmony postfixes (`XUiC_MapArea`, including the private
+  `onMapPressedLeft` for greyed out markers, `LootManager.LootContainerOpened`,
   `XUiC_LootWindow.OnClose`, `EntityPlayer.onNewPrefabEntered`,
   `PrefabInstance.ResetBlocksAndRebuild`) and appends one nav object class through XPath, so no
   vanilla config file is overwritten.
@@ -130,7 +167,8 @@ Vortex and the Mod Launcher handle the archive as a normal modlet.
 
 Container names are LootLists from `Data/Config/loot.xml`, not block names.
 
-The badge layout - `ChestScale`, `ChestOffsetX/Y`, `TierScale`, `TierOffsetX/Y` - is in fractions
+The badge layout - `ChestScale`, `ChestOffsetX/Y`, `TierScale`, `TierOffsetX/Y`, and
+`FinderScale`, `FinderOffsetY` for the teammate name under the skull - is in fractions
 of the current icon size, measured from the centre of the skull with X right and Y up, so it
 holds at every zoom level. All of it is re-read by `poimap reload`, so it can be dialled in with
 the map open.
@@ -141,7 +179,9 @@ works out to follows whichever size preset is active - switching S/M/L does not 
 `poimap status` prints both the cutoff and the size the map last drew.
 
 What the popup changes is remembered per save, in `PoiMapPlus.ui` next to the POI state, and it
-overrides the starting values from this file.
+overrides the starting values from this file. In single player and on the host that is the world
+save folder; a client on someone else's server keeps them in the game's `SavesLocal` folder for
+that server.
 
 The config is re-read on every world load, so a trip through the main menu is enough. Or use the
 console:
@@ -149,7 +189,7 @@ console:
 ```
 poimap reload    re-read the config and refresh markers
 poimap rescan    reload, forget learned loot state, rescan from scratch
-poimap status    show tracked lists and POI counts
+poimap status    show tracked lists, POI counts and the party sharing state
 poimap here      dump containers and stored state for the POI you are standing in
 poimap respawn   backdate the emptied chest here so its respawn is already due, for
                  testing the marker without waiting; "poimap respawn all" does the lot

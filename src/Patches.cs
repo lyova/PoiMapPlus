@@ -54,6 +54,37 @@ namespace PoiMapPlus
         }
     }
 
+    /// <summary>
+    /// A left click on the map greys the marker under the cursor out, or back. Applied by hand
+    /// like the badge patch: the target is private and matched by name.
+    /// </summary>
+    public static class Patch_MapArea_PressedLeft
+    {
+        const string cTarget = "onMapPressedLeft";
+
+        static readonly FieldInfo fiHovered =
+            AccessTools.Field(typeof(XUiC_MapArea), "closestMouseOverNavObject");
+
+        public static void Apply(Harmony _harmony)
+        {
+            var target = AccessTools.Method(typeof(XUiC_MapArea), cTarget);
+            if (target == null || fiHovered == null)
+            {
+                Log.Warning($"[PoiMapPlus] XUiC_MapArea.{cTarget} not found, greyed out markers will not be remembered");
+                return;
+            }
+
+            _harmony.Patch(target, postfix: new HarmonyMethod(
+                AccessTools.Method(typeof(Patch_MapArea_PressedLeft), nameof(Postfix))));
+        }
+
+        public static void Postfix(XUiC_MapArea __instance)
+        {
+            try { PoiMarkers.OnClicked(fiHovered.GetValue(__instance) as NavObject); }
+            catch (System.Exception e) { Log.Error("[PoiMapPlus] map click: " + e); }
+        }
+    }
+
     /// <summary>Rebuild the markers every time the player opens the map.</summary>
     [HarmonyPatch(typeof(XUiC_MapArea), nameof(XUiC_MapArea.OnOpen))]
     public static class Patch_MapArea_OnOpen
@@ -90,11 +121,7 @@ namespace PoiMapPlus
                 if (_prefabInstance == null) return;
 
                 var rec = PoiDb.GetOrCreate(_prefabInstance.boundingBoxPosition.x, _prefabInstance.boundingBoxPosition.z);
-                if (!rec.Discovered)
-                {
-                    rec.Discovered = true;
-                    PoiDb.MarkDirty();
-                }
+                PoiDb.MarkDiscovered(rec);
 
                 PoiScanner.Scan(_prefabInstance, true);
             }
@@ -115,19 +142,29 @@ namespace PoiMapPlus
     {
         static readonly FieldInfo fiTe = AccessTools.Field(typeof(XUiC_LootWindow), "te");
 
-        static void Postfix(XUiC_LootWindow __instance)
+        // OnClose lets go of the container before it returns, so it is taken on the way in
+        static void Prefix(XUiC_LootWindow __instance, out TEFeatureStorage __state)
+        {
+            __state = fiTe != null ? fiTe.GetValue(__instance) as TEFeatureStorage : null;
+        }
+
+        static void Postfix(TEFeatureStorage __state)
         {
             try
             {
-                if (fiTe == null) return;
-
-                var storage = fiTe.GetValue(__instance) as TEFeatureStorage;
+                var storage = __state;
                 TileEntity te = storage?.Parent;
                 if (te == null) return;
 
-                var pi = PoiRegistry.FindAt(te.ToWorldPos());
+                var pos = te.ToWorldPos();
+                OpenedContainers.Add(pos);
+
+                var pi = PoiRegistry.FindAt(pos);
                 if (pi == null) return;
 
+                // A client never hears LootContainerOpened, so bags that vanish once emptied
+                // have to be ranked here or they would never count
+                PoiScanner.NoteOpened(pi, storage);
                 PoiScanner.Scan(pi, true);
             }
             catch (System.Exception e) { Log.Error("[PoiMapPlus] loot window close: " + e); }
@@ -138,10 +175,13 @@ namespace PoiMapPlus
     [HarmonyPatch(typeof(LootManager), nameof(LootManager.LootContainerOpened))]
     public static class Patch_LootManager_LootContainerOpened
     {
-        static void Postfix(TEFeatureStorage _tileEntity)
+        static void Postfix(TEFeatureStorage _tileEntity, int _entityIdThatOpenedIt)
         {
             try
             {
+                // A host runs this for every player's container as well, not only its own
+                if (PartyShare.Local == null || _entityIdThatOpenedIt != PartyShare.Local.entityId) return;
+
                 TileEntity te = _tileEntity?.Parent;
                 var storageFeature = _tileEntity;
                 var lootList = storageFeature != null ? storageFeature.lootListName : "?";
@@ -172,15 +212,7 @@ namespace PoiMapPlus
                     Log.Out($"[PoiMapPlus] opened '{lootList}' in '{PoiRegistry.DisplayName(pi)}': " +
                             (tracked ? $"rank {rank}" : "not tracked"));
 
-                if (tracked)
-                {
-                    var rec = PoiDb.GetOrCreate(pi.boundingBoxPosition.x, pi.boundingBoxPosition.z);
-                    if (rec.BestOpenedRank == 0 || rank < rec.BestOpenedRank)
-                    {
-                        rec.BestOpenedRank = rank;
-                        PoiDb.MarkDirty();
-                    }
-                }
+                if (tracked) PoiScanner.NoteRank(pi, rank);
 
                 PoiScanner.Scan(pi, true);
             }

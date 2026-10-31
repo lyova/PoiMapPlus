@@ -1,11 +1,25 @@
 # Changelog
 
-Versions here are the mod's own. On Nexus this mod is numbered after the game version it was
-first published for, so 1.1.0 is released there as **3.3** and 1.0.0 was **3.2**.
+Nexus used to number this mod after the game version: 1.1.0 went up there as **3.3** and 1.0.0
+as **3.2**. From 1.1.1 on the numbers are the same in both places.
+
+## 1.2.0
+
+- A marker greyed out with a click on the map stays grey after a restart.
+- Party members see each other's POIs and their loot state on the map.
+- A teammate's markers stay after they log off or leave the party, kept in `PoiMapPlus.party.csv`.
+- What the party told you about a POI stays after you leave the party.
+- New Multiplayer group in the map settings.
+- `Show discoverer` puts the name of whoever found a POI first under its marker; the tooltip says
+  `Discovered by ...`, or `Discovered by you`.
+- `Only my POIs` hides the POIs only your teammates have been to. Off by default.
+- **The party features need the mod on the server, and a server with it requires it from every
+  player.** Without it on the server the mod stays client side, as before.
+- Fixed nothing being remembered when playing as a client on someone else's server. Those files
+  now live in the game's `SavesLocal` folder.
+- POI state file bumped to v5. Older versions of the mod still read it.
 
 ## 1.1.1
-
-Released on Nexus as **3.3.1**.
 
 - Updated for 7 Days to Die V 3.3. The mod failed to load on 3.3, and this build does not run on
   3.2 or older - stay on 1.1.0 there.

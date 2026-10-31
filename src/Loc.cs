@@ -15,11 +15,15 @@ namespace PoiMapPlus
         const string cNoteLooted    = "poimapplusNoteLooted";
         const string cNoteStocked   = "poimapplusNoteStocked";
 
+        const string cDiscoveredBy  = "poimapplusDiscoveredBy";
+        const string cDiscoveredByYou = "poimapplusDiscoveredByYou";
+        const string cFinderColor   = "A8A8A8";
+
         /// <summary>
         /// Hover text for a POI marker: name, difficulty tier and what happened to its loot.
         /// An untouched POI gets no note - only the states worth acting on are spelled out.
         /// </summary>
-        public static string MarkerLabel(PrefabInstance _pi, PoiRecord _rec)
+        public static string MarkerLabel(PrefabInstance _pi, PoiRecord _rec, string _finder = null, bool _mine = false)
         {
             var name = PoiRegistry.DisplayName(_pi);
             var tier = PoiRegistry.Tier(_pi);
@@ -32,7 +36,15 @@ namespace PoiMapPlus
             // The separator lives here rather than in the note strings: leading spaces in a
             // localization cell are the kind of thing a CSV round trip quietly eats.
             var note = Note(_rec);
-            return note.Length > 0 ? label + "  " + note : label;
+            if (note.Length > 0) label += "  " + note;
+
+            // NGUI markup: [sub] draws the line smaller, the colour tag dims it.
+            if (!string.IsNullOrEmpty(_finder))
+                label += "\n[sub][" + cFinderColor + "]" +
+                         (_mine ? Get(cDiscoveredByYou, "Discovered by you")
+                                : string.Format(Get(cDiscoveredBy, "Discovered by {0}"), _finder)) + "[-][/sub]";
+
+            return label;
         }
 
         static string Note(PoiRecord _rec)

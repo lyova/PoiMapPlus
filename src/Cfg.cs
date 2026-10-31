@@ -82,6 +82,10 @@ namespace PoiMapPlus
         public static float TierOffsetX = 0.48f;
         public static float TierOffsetY = -0.52f;
 
+        // Teammate name under the skull: font size and the gap below the icon centre, as fractions of the icon size
+        public static float FinderScale = 0.38f;
+        public static float FinderOffsetY = 0.55f;
+
         // Tier colour bands: up to MidTier is plain, MidTier itself is the "open" orange,
         // anything above turns red.
         public static int TierMid = 3;
@@ -208,6 +212,8 @@ namespace PoiMapPlus
                 case "TierOffsetX":           if (TryFloat(_value, out f)) TierOffsetX = f; break;
                 case "TierOffsetY":           if (TryFloat(_value, out f)) TierOffsetY = f; break;
                 case "TierMid":               if (TryInt(_value, out i)) TierMid = i; break;
+                case "FinderScale":           if (TryFloat(_value, out f)) FinderScale = f; break;
+                case "FinderOffsetY":         if (TryFloat(_value, out f)) FinderOffsetY = f; break;
             }
         }
 

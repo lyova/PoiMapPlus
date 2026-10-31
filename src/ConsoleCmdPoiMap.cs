@@ -225,6 +225,10 @@ namespace PoiMapPlus
                     + $"markers={(UiState.ShowMarkers ? "on" : "off")}");
             Log.Out($"[PoiMapPlus] icon size last drawn: {(MarkerDecor.LastIconSize > 0 ? MarkerDecor.LastIconSize + " units" : "unknown, open the map once")}" +
                     $", badges show from {Cfg.BadgeMinSize} up (zoom <= {Cfg.BadgeMaxZoom})");
+            Log.Out($"[PoiMapPlus] party: server supports it={PartyShare.Available}, in party={PartyShare.InParty}, " +
+                    $"showFinder={UiState.ShowFinder}, onlyMine={UiState.OnlyMine}, " +
+                    $"teammates={PartyShare.PeerCount}, POIs received={PartyShare.SharedPoiCount}, " +
+                    $"own opened containers={(OpenedContainers.Applies ? OpenedContainers.Count.ToString() : "n/a, single player")}");
         }
     }
 }

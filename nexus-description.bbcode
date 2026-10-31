@@ -31,7 +31,8 @@ There is a small gear in the bottom right corner of the map. It opens a panel wh
 [list]
 [*]turn the markers off entirely, without losing anything - the mod keeps tracking in the background and everything is still there when you switch them back on;
 [*]hide the tier label or the chest badge if you prefer a cleaner map;
-[*]pick the marker size: small, medium or large.
+[*]pick the marker size: small, medium or large;
+[*]in the Multiplayer group, show who found each POI, or hide the POIs only your teammates have been to.
 [/list]
 
 Your choice is remembered per save.
@@ -44,6 +45,8 @@ Your choice is remembered per save.
 [*][b]The map keeps up on its own.[/b] When the game puts loot back into a POI you cleared, its marker goes orange again without you having to go and look.
 [*][b]Follows the best container present.[/b] The mod ranks loot containers and watches the richest one a POI actually has, so a tier 5 chest is what counts in a big dungeon, and a weapons bag is what counts where that is all there is.
 [*][b]Quest resets are respected.[/b] Reset a POI through a trader quest and its marker goes back to orange.
+[*][b]Greyed out markers stay grey.[/b] Click a marker to grey it out, like any marker on the map - it stays that way after a restart.
+[*][b]Party sharing.[/b] See the POIs your teammates have been to, what is left in them, and who found each one first. See Multiplayer below.
 [*][b]Works on existing saves.[/b]
 [/list]
 
@@ -68,13 +71,25 @@ Trash bins, mailboxes and other filler are not on the list at all, so opening a 
 [*]Start the game without EasyAntiCheat.
 [/list]
 
-Vortex and the 7D2D Mod Launcher handle the archive as a normal modlet. To uninstall, delete the folder - the mod only ever writes its own small state file into your save.
+Vortex and the 7D2D Mod Launcher handle the archive as a normal modlet. To uninstall, delete the folder - the mod only ever writes its own small state files into your save.
 
 [size=4][b]Multiplayer[/b][/size]
 
-The mod is client side only: the server does not need it and neither do the other players. Everything it reads is already on your client, and looted marks live in your own save.
+Play with friends and the map becomes the party's map.
 
-[b]That said, it has only been tested in single player.[/b] It should behave the same as a client on a dedicated server, but nobody has verified that yet - feedback welcome. Marks are personal: they do not sync with what your teammates have looted.
+[list]
+[*][b]See where your party has been.[/b] Every POI a teammate visits shows up on your map, and yours on theirs. Nothing to set up - join a party and it just works.
+[*][b]Loot state is shared too.[/b] A teammate empties the chest - your marker turns green as well. No more running across town to a place someone already stripped.
+[*][b]Markers stay.[/b] A teammate's POIs remain on your map after they log off or leave the party, and survive restarts.
+[*][b]Who found it.[/b] Tick [i]Show discoverer[/i] and the name of the teammate who found a POI first appears under the skull. The tooltip always says who it was - or that it was you.
+[*][b]Going solo again.[/b] Everything you learned in the party stays yours. Ticking [i]Only my POIs[/i] hides the places only your teammates have been to, and unticking brings them back.
+[*][b]No free intel.[/b] The mod only counts chests you or your party opened. A stranger emptying a POI does not show up on your map - you find out when you open the chest, like everyone else.
+[*][b]Greying out stays personal.[/b] A marker you grey out is greyed out for you only.
+[/list]
+
+[b]Setup:[/b] for the party features the mod has to be on the [b]server[/b] as well, and once it is, [b]every player on that server needs it too[/b] - the game will not let anyone join without it. Without it on the server the mod still works for you alone, just without the party features.
+
+Multiplayer has had less testing than single player - feedback welcome.
 
 [size=4][b]Compatibility[/b][/size]
 
@@ -93,13 +108,21 @@ Most of it is on the map itself, behind the gear. For the rest there is [b]PoiMa
 
 [size=4][b]Changelog[/b][/size]
 
-[b]3.3.1[/b]
+[b]1.2.0[/b]
+[list]
+[*]A marker you grey out with a click now stays grey after a restart.
+[*]Party features: your party's POIs and their loot state on your map, kept after a teammate leaves. Needs the mod on the server and on every player.
+[*]New Multiplayer settings: show who found each POI first, or hide the places only your teammates have been to.
+[*]Playing on someone else's server, your markers and settings are now kept between sessions.
+[/list]
+
+[b]1.1.1[/b]
 [list]
 [*]Works with game version 3.3.
 [*]Removed the Russian translation.
 [/list]
 
-[b]3.3[/b]
+[b]1.1.0[/b]
 [list]
 [*]The marker now shows the POI tier, so you no longer have to hover to see how rough a place is.
 [*]Added a chest badge: green if you emptied the container, orange if you left something in it. Only emptied ones ever get refilled by the game.
@@ -109,14 +132,14 @@ Most of it is on the map itself, behind the gear. For the rest there is [b]PoiMa
 [*]Fixed the map occasionally losing all of its icons for a moment.
 [/list]
 
-[b]3.2[/b]
+[b]1.0.0[/b]
 [list]
 [*]First release.
 [/list]
 
 [size=4][b]Source and permissions[/b][/size]
 
-Source code is on GitHub: [url=https://github.com/lyova/7dtd-mods]github.com/lyova/7dtd-mods[/url]
+Source code is on GitHub: [url=https://github.com/lyova/PoiMapPlus]github.com/lyova/PoiMapPlus[/url]
 
 MIT licensed. Fork it, modify it, bundle it into mod packs - credit is appreciated but not required.
 
